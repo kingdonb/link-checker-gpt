@@ -46,107 +46,112 @@ def determine_link_type(domain_name, link_url)
 end
 
 # Function to download content and analyze links
-def download_and_analyze_links(sitemap_urls)
+def download_and_analyze_links(sitemap_urls, domain)
   links_data = []
-  cache_expiry_time = 3600 # 1 hour cache validity
-
-  # Introducing concurrency using Threads
   threads = []
 
-  sitemap_urls.each do |url|
+  sitemap_urls.each_slice(SLICE_SIZE) do |slice|
     threads << Thread.new do
-      puts "Visiting: #{url}"
+      slice.each do |url|
+        begin
+          # Ensure the URL is absolute
+          unless URI(url).absolute?
+            url = URI.join("https://#{domain}", url).to_s
+          end
 
-      # Validate cache before downloading
-      cache_path = "cache" + URI(url).path
-      if File.exist?(cache_path) && (Time.now - File.mtime(cache_path)) < cache_expiry_time
-        page_content = File.read(cache_path)
-      else
-        page_content = Net::HTTP.get(URI(url))
+          puts "Visiting: #{url}"
 
-        # Save the content to a local cache
-        FileUtils.mkdir_p(File.dirname(cache_path))
-        File.write(cache_path, page_content)
-      end
+          # Check if content already exists in cache
+          cache_path = "cache" + URI(url).path
+          cache_path += "/index.html" if cache_path.end_with?('/')
+          unless File.exist?(cache_path)
+            html_content = Net::HTTP.get(URI(url))
+            FileUtils.mkdir_p(File.dirname(cache_path))
+            File.write(cache_path, html_content)
+          else
+            html_content = File.read(cache_path)
+          end
 
-      doc = Nokogiri::HTML(page_content)
+          doc = Nokogiri::HTML(html_content)
 
-      # Using CSS selectors for better link extraction efficiency
-      doc_links = doc.css('a[href]')
+          # Extracting all the links from the page
+          doc.css('a').each do |link|
+            link_data = {
+              link_source_file: url,
+              link_target: nil,
+              link_type: nil,
+              anchor: nil,
+              reference_intact: nil,
+              response_status: nil,
+              link_string: link['href'],
+              link_text: link.text.strip,
+              link_line_no: link.line
+            }
 
-      doc_links.each do |link|
-        link_href = link['href'].to_s.strip
-        next if link_href.empty?
+            # Handling relative links and converting them to absolute URLs
+            link_url = URI.join(url, link['href'].to_s).to_s rescue next
+            link_data[:link_target] = link_url
 
-        # Create the full URL with the anchor fragment
-        link_url_with_fragment = URI.join(url, link_href)
+            # Determine if the link is remote, local, or relative
+            if link_url.start_with?("http://", "https://")
+              link_data[:link_type] = link_url.include?(domain) ? 'local' : 'remote'
+            else
+              link_data[:link_type] = 'relative'
+            end
 
-        # Create a version of the URL without the fragment for caching and network requests
-        link_url = link_url_with_fragment.dup
-        link_url.fragment = nil
+            # Check if the link has an anchor reference
+            link_data[:anchor] = URI(link_url).fragment
 
-        link_data = {
-          link_source_file: url,
-          link_target: link_url_with_fragment.to_s,
-          link_type: determine_link_type(URI(url), link_url),
-          anchor: !link_url_with_fragment.fragment.nil?,
-          reference_intact: nil,
-          response_status: nil,
-          link_string: link_href,
-          link_text: link.text.strip,
-          link_line_no: link.line
-        }
+            links_data << link_data
+          end
 
-        links_data << link_data
+        rescue StandardError => e
+          puts "Error downloading or analyzing URL #{url}: #{e.message}"
+        end
       end
     end
   end
 
-  # Wait for all threads to complete
   threads.each(&:join)
-
   links_data
 end
 
 # Function to validate links
-def validate_links(links_data)
-  # Set for storing already validated links to avoid redundant work
-  validated_links = Set.new
+def validate_links(links_data, domain)
+  parsed_docs_cache = {}
 
-  links_data.each do |link_data|
-    link_target = link_data[:link_target]
-    next if validated_links.include?(link_target)
-    validated_links << link_target
-
-    puts "Evaluating link: #{link_target}"
-
+  links_data.each do |link|
+    link_url = link[:link_target]
+    puts "Evaluating link: #{link_url}"
     begin
-      case link_data[:link_type]
-      when 'remote'
-        # Make an HTTP request to the remote link and record the status
-        response = Net::HTTP.get_response(URI(link_target))
-        link_data[:response_status] = response.code
+      if link[:link_type] == 'remote'
+        # Check the HTTP status for remote links
+        response = Net::HTTP.get_response(URI(link_url))
+        link[:response_status] = response.code
+      else
+        # Normalize the link URL
+        normalized_url = URI(link_url).normalize.to_s
 
-      when 'local', 'relative'
-        # Check if the anchor reference is intact in the cached copy of the target page
-        cache_path = "cache" + URI(link_target).path
-        cache_path += "/index.html" if File.directory?(cache_path)
+        # Check the anchor reference for local and relative links
+        cache_path = "cache" + URI(normalized_url).path
+        cache_path += "/index.html" if cache_path.end_with?('/')
 
-        if File.exist?(cache_path)
-          doc = Nokogiri::HTML(File.read(cache_path))
-          anchor = URI(link_target).fragment
+        # Use the parsed doc from cache if available, otherwise parse the cached file
+        unless parsed_docs_cache[normalized_url]
+          html_content = File.read(cache_path)
+          parsed_docs_cache[normalized_url] = Nokogiri::HTML(html_content)
+        end
+        doc = parsed_docs_cache[normalized_url]
 
-          if anchor
-            # Check if the anchor exists in the target page
-            link_data[:reference_intact] = !!doc.at_css("a[name='#{anchor}'], ##{anchor}")
-          end
-        else
-          puts "Cached copy not found for: #{link_target}"
+        # Check for the existence of the anchor in a more inclusive way
+        anchor = link[:anchor]
+        if anchor
+          link[:reference_intact] = !doc.css("[name=#{anchor}], ##{anchor}, [id=#{anchor}]").empty?
         end
       end
-
     rescue StandardError => e
-      puts "Error while evaluating link #{link_target}: #{e.message}"
+      puts "Error validating link #{link_url}: #{e.message}"
+      link[:response_status] = "unreachable" if link[:link_type] == 'remote'
     end
   end
 end
@@ -167,28 +172,55 @@ def generate_report(links_data)
 end
 
 # Main execution
+require 'fileutils'
+require 'json'
+
+# Constants
+SLICE_SIZE = 10
+CSV_FILE = ARGV[1] || "report.csv"
+LINKS_DATA_FILE = "links_data.json"
+
+# Default domain
 domain = ARGV[0] || "fluxcd.io"
-links_data = []
 
-# Fetch sitemap and analyze links
+# Step 1: Fetch sitemap URLs
 begin
-  sitemap_urls = fetch_sitemap(domain)
-  puts "Fetched sitemap with #{sitemap_urls.count} URLs."
+  sitemap_urls = fetch_sitemap_urls(domain)
+  puts "Fetched sitemap with #{sitemap_urls.size} URLs."
+rescue => e
+  puts "Error fetching sitemap: #{e.message}"
+  exit
+end
 
-  download_and_analyze_links(sitemap_urls, links_data)
-  puts "Downloaded and analyzed links for #{sitemap_urls.count} URLs."
+# Step 2: Download and analyze links
+# Check if a cached links_data file exists
+if File.exist?(LINKS_DATA_FILE)
+  links_data = JSON.parse(File.read(LINKS_DATA_FILE), symbolize_names: true)
+  puts "Loaded links data from cache."
+else
+  begin
+    links_data = download_and_analyze_links(sitemap_urls, domain)
+    # Save links_data to a file
+    File.write(LINKS_DATA_FILE, links_data.to_json)
+    puts "Links data saved to cache."
+  rescue => e
+    puts "Error downloading and analyzing links: #{e.message}"
+    exit
+  end
+end
 
-  validate_links(links_data)
-  puts "Validated #{links_data.count} links."
+# Step 3: Validate each link
+begin
+  validate_links(links_data, domain)
+rescue => e
+  puts "Error validating links: #{e.message}"
+  exit
+end
 
-  # Generate the report with problematic links
+# Step 4: Generate a CSV report
+begin
   generate_report(links_data)
-  puts "Report generated."
-
-  # Display summary
-  problematic_links = links_data.select { |link| (link[:link_type] == 'remote' && link[:response_status] != '200') || (link[:anchor] && !link[:reference_intact]) }
-  puts "#{problematic_links.count} problematic links detected."
-
-rescue StandardError => e
-  puts "Error encountered: #{e.message}"
+  puts "Report generated at #{CSV_FILE}."
+rescue => e
+  puts "Error generating report: #{e.message}"
 end
