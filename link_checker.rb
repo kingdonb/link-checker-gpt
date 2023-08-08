@@ -8,6 +8,9 @@ require 'open-uri'
 require 'uri'
 require 'pry'
 
+# PRY_MUTEX = Thread::Mutex.new
+# PRY_MUTEX.synchronize{binding.pry}
+
 # Function to fetch the sitemap
 def fetch_sitemap(domain_name)
   sitemap_url = URI.join(domain_name, "/sitemap.xml")
@@ -130,43 +133,76 @@ def download_and_analyze_links(sitemap_urls, domain)
   links_data
 end
 
+# Constants
+MAX_THREADS = 10
+MAX_RETRIES = 3
+
+def validate_remote_link(link)
+  retries = 0
+
+  begin
+    response = Net::HTTP.get_response(URI(link[:link_target]))
+    link[:response_status] = response.code
+  rescue Net::OpenTimeout, Net::ReadTimeout => e
+    retries += 1
+    retry if retries < MAX_RETRIES
+    puts "Error after #{MAX_RETRIES} retries for link #{link[:link_target]}: #{e.message}"
+    link[:response_status] = "Timeout"
+  rescue SocketError => e
+    puts "Network error for link #{link[:link_target]}: #{e.message}"
+    link[:response_status] = "Network Error"
+  rescue StandardError => e
+    puts "Unexpected error for link #{link[:link_target]}: #{e.message}"
+    link[:response_status] = "Error"
+  end
+end
+
+def validate_local_link(link, parsed_docs_cache)
+  normalized_url = URI(link[:link_target]).normalize.to_s
+  cache_path = get_cache_path(normalized_url)
+
+  return link[:response_status] = "Not Cached" unless File.exist?(cache_path)
+
+  unless parsed_docs_cache[normalized_url]
+    html_content = File.read(cache_path)
+    parsed_docs_cache[normalized_url] = Nokogiri::HTML(html_content)
+  end
+
+  doc = parsed_docs_cache[normalized_url]
+  anchor = link[:anchor]
+
+  if valid_anchor?(anchor)
+    link[:reference_intact] = !doc.css("[name=#{anchor}], ##{anchor}, [id=#{anchor}]").empty?
+  end
+end
+
+def valid_anchor?(anchor)
+  anchor && !anchor.empty? && !anchor.match(/[\\[\\]{}()*+?.,\\\\^$|#\\s]/)
+end
+
 # Function to validate links
 def validate_links(links_data, domain)
   parsed_docs_cache = {}
 
-  links_data.each do |link|
-    link_url = link[:link_target]
-    puts "Evaluating link: #{link_url}"
-    begin
-      if link[:link_type] == 'remote'
-        # Check the HTTP status for remote links
-        response = Net::HTTP.get_response(URI(link_url))
-        link[:response_status] = response.code
-      else
-        # Normalize the link URL
-        normalized_url = URI(link_url).normalize.to_s
+  # Separate remote links for parallel processing
+  remote_links = links_data.select { |link| link[:link_type] == 'remote' }
+  local_links = links_data - remote_links
 
-        cache_path = get_cache_path(normalized_url)
+  # Handle local links
+  local_links.each do |link|
+    validate_local_link(link, parsed_docs_cache)
+  end
 
-        # Use the parsed doc from cache if available, otherwise parse the cached file
-        unless parsed_docs_cache[normalized_url]
-          html_content = File.read(cache_path)
-          parsed_docs_cache[normalized_url] = Nokogiri::HTML(html_content)
-        end
-        doc = parsed_docs_cache[normalized_url]
-
-        # Check if anchor is not empty and does not contain problematic characters
-        anchor = link[:anchor]
-        if anchor && !anchor.empty? && !anchor.match(/[\\[\\]{}()*+?.,\\\\^$|#\\s]/)
-          link[:reference_intact] = !doc.css("[name=#{anchor}], ##{anchor}, [id=#{anchor}]").empty?
-        end
+  # Parallel processing for remote links
+  thread_pool = []
+  remote_links.each_slice(remote_links.size / MAX_THREADS + 1) do |link_slice|
+    thread_pool << Thread.new do
+      link_slice.each do |link|
+        validate_remote_link(link)
       end
-    rescue StandardError => e
-      puts "Error validating link #{link_url}: #{e.message}"
-      binding.pry
-      link[:response_status] = "unreachable" if link[:link_type] == 'remote'
     end
   end
+  thread_pool.each(&:join)  # Wait for all threads to finish
 end
 
 # Generates a CSV report with the problematic links data
