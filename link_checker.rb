@@ -1,9 +1,12 @@
 
 require 'nokogiri'
 require 'net/http'
-require 'uri'
 require 'csv'
 require 'fileutils'
+require 'json'
+require 'open-uri'
+require 'uri'
+require 'pry'
 
 # Function to fetch the sitemap
 def fetch_sitemap(domain_name)
@@ -45,6 +48,18 @@ def determine_link_type(domain_name, link_url)
   'relative'
 end
 
+def get_cache_path(url)
+  uri = URI(url)
+  cache_path = "cache" + uri.path
+
+  # If the path doesn't have a common file extension, treat it as a directory.
+  unless cache_path.match(/\.(html|xml|json|txt|js|css|jpg|jpeg|png|gif)$/i)
+    cache_path += "/index.html"
+  end
+
+  cache_path
+end
+
 # Function to download content and analyze links
 def download_and_analyze_links(sitemap_urls, domain)
   links_data = []
@@ -55,15 +70,14 @@ def download_and_analyze_links(sitemap_urls, domain)
       slice.each do |url|
         begin
           # Ensure the URL is absolute
-          unless URI(url).absolute?
+          uri = URI(url)
+          unless uri.absolute?
             url = URI.join("https://#{domain}", url).to_s
           end
 
           puts "Visiting: #{url}"
 
-          # Check if content already exists in cache
-          cache_path = "cache" + URI(url).path
-          cache_path += "/index.html" if cache_path.end_with?('/')
+          cache_path = get_cache_path(url)
           unless File.exist?(cache_path)
             html_content = Net::HTTP.get(URI(url))
             FileUtils.mkdir_p(File.dirname(cache_path))
@@ -132,9 +146,7 @@ def validate_links(links_data, domain)
         # Normalize the link URL
         normalized_url = URI(link_url).normalize.to_s
 
-        # Check the anchor reference for local and relative links
-        cache_path = "cache" + URI(normalized_url).path
-        cache_path += "/index.html" if cache_path.end_with?('/')
+        cache_path = get_cache_path(normalized_url)
 
         # Use the parsed doc from cache if available, otherwise parse the cached file
         unless parsed_docs_cache[normalized_url]
@@ -143,14 +155,15 @@ def validate_links(links_data, domain)
         end
         doc = parsed_docs_cache[normalized_url]
 
-        # Check for the existence of the anchor in a more inclusive way
+        # Check if anchor is not empty and does not contain problematic characters
         anchor = link[:anchor]
-        if anchor
+        if anchor && !anchor.empty? && !anchor.match(/[\\[\\]{}()*+?.,\\\\^$|#\\s]/)
           link[:reference_intact] = !doc.css("[name=#{anchor}], ##{anchor}, [id=#{anchor}]").empty?
         end
       end
     rescue StandardError => e
       puts "Error validating link #{link_url}: #{e.message}"
+      binding.pry
       link[:response_status] = "unreachable" if link[:link_type] == 'remote'
     end
   end
@@ -171,9 +184,15 @@ def generate_report(links_data)
   end
 end
 
-# Main execution
-require 'fileutils'
-require 'json'
+def fetch_sitemap_urls(domain)
+  sitemap_uri = URI("https://#{domain}/sitemap.xml")
+  sitemap = Nokogiri::XML(Net::HTTP.get(sitemap_uri))
+  sitemap.remove_namespaces!
+  urls = sitemap.xpath('//url/loc').map(&:text)
+  raise "No URLs found in sitemap" if urls.empty?
+
+  urls
+end
 
 # Constants
 SLICE_SIZE = 10
