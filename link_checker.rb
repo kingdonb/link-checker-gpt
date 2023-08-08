@@ -8,7 +8,7 @@ require 'open-uri'
 require 'uri'
 require 'pry'
 
-# PRY_MUTEX = Thread::Mutex.new
+PRY_MUTEX = Thread::Mutex.new
 # PRY_MUTEX.synchronize{binding.pry}
 
 # Function to fetch the sitemap
@@ -72,8 +72,13 @@ def download_and_analyze_links(sitemap_urls, domain)
     threads << Thread.new do
       slice.each do |url|
         begin
-          # Ensure the URL is absolute
           uri = URI(url)
+
+          # Skip mailto links
+          # PRY_MUTEX.synchronize{binding.pry} if uri&.scheme == 'mailto'
+          # next if uri&.scheme == 'mailto'
+
+          # Ensure the URL is absolute
           unless uri.absolute?
             url = URI.join("https://#{domain}", url).to_s
           end
@@ -138,6 +143,10 @@ MAX_THREADS = 10
 MAX_RETRIES = 3
 
 def validate_remote_link(link)
+  # return unless link[:link_target]
+
+  puts "Validating: #{link[:link_target]}"
+
   retries = 0
 
   begin
@@ -172,12 +181,19 @@ def validate_local_link(link, parsed_docs_cache)
   anchor = link[:anchor]
 
   if valid_anchor?(anchor)
-    link[:reference_intact] = !doc.css("[name=#{anchor}], ##{anchor}, [id=#{anchor}]").empty?
+    escaped = escaped_anchor(anchor)
+    link[:reference_intact] = !doc.css("[name=#{escaped}], ##{escaped}, [id=#{escaped}]").empty?
   end
+# rescue Nokogiri::CSS::SyntaxError => e
+#   PRY_MUTEX.synchronize{binding.pry}
 end
 
 def valid_anchor?(anchor)
   anchor && !anchor.empty? && !anchor.match(/[\\[\\]{}()*+?.,\\\\^$|#\\s]/)
+end
+
+def escaped_anchor(anchor)
+  anchor.gsub(":", "\\:")
 end
 
 # Function to validate links
@@ -190,19 +206,21 @@ def validate_links(links_data, domain)
 
   # Handle local links
   local_links.each do |link|
+    next if link[:link_target] =~ /^mailto:/ # is not a local link
     validate_local_link(link, parsed_docs_cache)
   end
 
-  # Parallel processing for remote links
-  thread_pool = []
-  remote_links.each_slice(remote_links.size / MAX_THREADS + 1) do |link_slice|
-    thread_pool << Thread.new do
-      link_slice.each do |link|
-        validate_remote_link(link)
-      end
-    end
-  end
-  thread_pool.each(&:join)  # Wait for all threads to finish
+  # # Parallel processing for remote links
+  # thread_pool = []
+  # remote_links.each_slice(remote_links.size / MAX_THREADS + 1) do |link_slice|
+  #   thread_pool << Thread.new do
+  #     link_slice.each do |link|
+  #       # don't validate anything for remote links
+  #       # validate_remote_link(link)
+  #     end
+  #   end
+  # end
+  # thread_pool.each(&:join)  # Wait for all threads to finish
 end
 
 # Generates a CSV report with the problematic links data
@@ -268,6 +286,7 @@ end
 begin
   validate_links(links_data, domain)
 rescue => e
+  # binding.pry
   puts "Error validating links: #{e.message}"
   exit
 end
