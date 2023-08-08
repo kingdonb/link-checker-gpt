@@ -6,7 +6,7 @@ require 'fileutils'
 require 'json'
 require 'open-uri'
 require 'uri'
-require 'pry'
+# require 'pry'
 
 PRY_MUTEX = Thread::Mutex.new
 # PRY_MUTEX.synchronize{binding.pry}
@@ -98,6 +98,10 @@ def download_and_analyze_links(sitemap_urls, domain)
 
           # Extracting all the links from the page
           doc.css('a').each do |link|
+            link_href = link['href']
+            # Skip links without href or with href set to '#'
+            next if link_href.nil? || link_href.strip == '#'
+
             link_data = {
               link_source_file: url,
               link_target: nil,
@@ -183,17 +187,26 @@ def validate_local_link(link, parsed_docs_cache)
   if valid_anchor?(anchor)
     escaped = escaped_anchor(anchor)
     link[:reference_intact] = !doc.css("[name=#{escaped}], ##{escaped}, [id=#{escaped}]").empty?
+    # binding.pry unless link[:reference_intact]
   end
-# rescue Nokogiri::CSS::SyntaxError => e
-#   PRY_MUTEX.synchronize{binding.pry}
+rescue Nokogiri::CSS::SyntaxError => e
+  # puts e.backtrace
+  raise e
+  # PRY_MUTEX.synchronize{binding.pry}
 end
 
 def valid_anchor?(anchor)
-  anchor && !anchor.empty? && !anchor.match(/[\\[\\]{}()*+?.,\\\\^$|#\\s]/)
+  return false unless anchor && !anchor.empty?
+
+  problematic_chars = %w[{}()]
+  problematic_chars.none? { |char| anchor.include?(char) }
 end
 
 def escaped_anchor(anchor)
   anchor.gsub(":", "\\:")
+    .gsub(".", "\\.")
+    .gsub("%", "\\%")
+    .gsub("/", "\\/")
 end
 
 # Function to validate links
@@ -230,7 +243,7 @@ def generate_report(links_data)
 
     links_data.each do |link|
       if link[:link_type] == 'remote' && link[:response_status] != '200'
-        csv << link.values
+        # csv << link.values
       elsif link[:anchor] && !link[:reference_intact]
         csv << link.values
       end
@@ -251,7 +264,7 @@ end
 # Constants
 SLICE_SIZE = 10
 CSV_FILE = ARGV[1] || "report.csv"
-LINKS_DATA_FILE = "links_data.json"
+LINKS_DATA_FILE = "cached_links_data.json"
 
 # Default domain
 domain = ARGV[0] || "fluxcd.io"
@@ -286,7 +299,7 @@ end
 begin
   validate_links(links_data, domain)
 rescue => e
-  # binding.pry
+  binding.pry
   puts "Error validating links: #{e.message}"
   exit
 end

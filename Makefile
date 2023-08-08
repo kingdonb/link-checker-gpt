@@ -5,6 +5,6 @@ all:
 clean:
 	@echo "Cleaning cache and progress data..."
 	@rm -rf cache
-	@rm -f links_data.json
+	@rm -f cached_links_data.json
 	@rm -f report.csv
 	@echo "Clean complete!"

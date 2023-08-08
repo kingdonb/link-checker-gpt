@@ -1,2 +1,3 @@
-cache/
-links_data.json
+cache/**
+cached_links_data.json
+report.csv
