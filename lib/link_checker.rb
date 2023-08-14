@@ -27,17 +27,19 @@ class LinkChecker
     fetcher = SitemapFetcher.new(@domain, @masquerade_domain)
     @sitemap_urls = fetcher.fetch_sitemap_urls
     puts "Fetched sitemap with #{@sitemap_urls.size} URLs."
-  rescue => e
+  rescue StandardError => e
     puts "Error fetching sitemap: #{e.message}"
     exit
   end
 
   def download_and_analyze_links
     if File.exist?(LINKS_DATA_FILE)
+      # Loading from cache: Parse JSON data into Link objects
       links_data_hashes = JSON.parse(File.read(LINKS_DATA_FILE), symbolize_names: true)
       @links_data = links_data_hashes.map { |hash| Link.from_h(hash) }
       puts "Loaded links data from cache."
     else
+      # Fetching fresh data: Use LinkAnalyzer to get Link objects and cache for future use
       analyzer = LinkAnalyzer.new(@domain, @masquerade_domain)
       @links_data = analyzer.analyze_links(@sitemap_urls)
 
@@ -46,7 +48,7 @@ class LinkChecker
 
       puts "Links data saved to cache."
     end
-  rescue => e
+  rescue StandardError => e
     puts "Error downloading and analyzing links: #{e.message}"
     exit
   end
@@ -54,7 +56,7 @@ class LinkChecker
   def validate_links
     validator = LinkValidator.new(@links_data, @domain, @masquerade_domain)
     @links_data = validator.validate_links
-  rescue => e
+  rescue StandardError => e
     # PRY_MUTEX.synchronize{binding.pry}
     puts "Error validating links: #{e.message}"
     exit
@@ -64,7 +66,7 @@ class LinkChecker
     generator = ReportGenerator.new(@links_data, @report_file)
     generator.generate
     puts "Report generated at #{@report_file}."
-  rescue => e
+  rescue StandardError => e
     puts "Error generating report: #{e.message}"
   end
 end
