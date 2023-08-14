@@ -1,14 +1,29 @@
 class SitemapFetcher
+  class RedirectionError < StandardError; end
+  class HTTPError < StandardError; end
+
   MAX_REDIRECTS = 5
 
-  def initialize(domain_name)
-    @sitemap_url = URI.join(domain_name, "/sitemap.xml")
+  def initialize(domain, masquerade_domain)
+    @domain = domain
+    @masquerade_domain = masquerade_domain
+    @sitemap_url = URI.join("https://", domain, "sitemap.xml")
+    @redirect_count = MAX_REDIRECTS
     @http = build_http_client
   end
 
-  def fetch
+  def fetch_sitemap_urls
     response = fetch_content
-    process_response(response)
+    urls = process_response(response)
+
+    # Update the URLs to use the masquerade domain
+    urls.map! do |url|
+      url.gsub(@domain, @masquerade_domain)
+    end
+
+    raise "No URLs found in sitemap" if urls.empty?
+
+    urls
   end
 
   private
@@ -28,16 +43,15 @@ class SitemapFetcher
   def process_response(response)
     case response.code.to_i
     when 200
-      # Successful response, continue
       sitemap = Nokogiri::XML(response.body)
       sitemap.remove_namespaces!
       sitemap.xpath('//url/loc').map(&:text)
     when 404
-      raise HTTPError.new("Sitemap not found at #{@sitemap_url}")
+      raise HTTPError, "Sitemap not found at #{@sitemap_url}"
     when 500
-      raise HTTPError.new("Server error while fetching the sitemap from #{@sitemap_url}")
+      raise HTTPError, "Server error while fetching the sitemap from #{@sitemap_url}"
     else
-      raise HTTPError.new("Failed to fetch sitemap from #{@sitemap_url}. Status code: #{response.code}")
+      raise HTTPError, "Failed to fetch sitemap from #{@sitemap_url}. Status code: #{response.code}"
     end
   end
 
@@ -46,28 +60,9 @@ class SitemapFetcher
   end
 
   def handle_redirection(response)
-    raise RedirectionError, "Too many redirects" if MAX_REDIRECTS <= 0
+    raise RedirectionError, "Too many redirects" if @redirect_count <= 0
 
     @sitemap_url = URI.join(@sitemap_url, response['location'])
-    MAX_REDIRECTS -= 1
+    @redirect_count -= 1
   end
-
-  def fetch_sitemap_urls
-    sitemap_uri = URI("https://#{@domain}/sitemap.xml")
-    sitemap = Nokogiri::XML(Net::HTTP.get(sitemap_uri))
-    sitemap.remove_namespaces!
-    urls = sitemap.xpath('//url/loc').map(&:text)
-    raise "No URLs found in sitemap" if urls.empty?
-
-    urls
-  end
-end
-
-class RedirectionError < StandardError; end
-class HTTPError < StandardError; end
-
-# Using the SitemapFetcher class in the fetch_sitemap function
-def fetch_sitemap(domain_name)
-  fetcher = SitemapFetcher.new(domain_name)
-  fetcher.fetch
 end
