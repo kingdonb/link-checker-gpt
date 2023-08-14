@@ -15,10 +15,9 @@ class BaseLinkValidator
   end
 
   def escaped_anchor
-    anchor = @link.anchor
+    anchor = URI.decode_www_form_component(@link.anchor.to_s)
     anchor.gsub(":", "\\:")
-          .gsub(".", "\\.")
-          .gsub("%", "\\%")
-          .gsub("/", "\\/")
+      .gsub(".", "\\.")
+      .gsub("/", "\\/")
   end
 end

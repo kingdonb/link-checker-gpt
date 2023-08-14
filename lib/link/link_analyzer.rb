@@ -16,8 +16,8 @@ class LinkAnalyzer
       threads << Thread.new do
         slice.each do |url|
           begin
-            puts "Visiting: #{url}"
             url = masquerade_url(url) if @masquerade_domain
+            puts "Visiting: #{url}"
             doc = Link.new(url, nil, @domain).download_and_store
 
             # Extracting all the links from the page
