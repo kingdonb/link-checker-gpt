@@ -1,3 +1,4 @@
 cache/**
-cached_links_data.json
+links_data.json
 report.csv
+preview-report.csv
