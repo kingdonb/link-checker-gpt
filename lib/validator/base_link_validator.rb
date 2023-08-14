@@ -6,14 +6,16 @@ class BaseLinkValidator
     @parsed_docs_cache = parsed_docs_cache
   end
 
-  def valid_anchor?(anchor)
+  def valid_anchor?
+    anchor = @link.anchor
     return false unless anchor && !anchor.empty?
 
     problematic_chars = %w[{}()]
     problematic_chars.none? { |char| anchor.include?(char) }
   end
 
-  def escaped_anchor(anchor)
+  def escaped_anchor
+    anchor = @link.anchor
     anchor.gsub(":", "\\:")
           .gsub(".", "\\.")
           .gsub("%", "\\%")

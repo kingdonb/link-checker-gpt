@@ -1,37 +1,46 @@
 class ReportGenerator
   HEADER = ["Link Source", "Link Target", "Type", "Anchor?", "Reference Intact?", "Response Status", "Link String", "Link Text", "Line No."]
-  FILE_NAME = "report.csv"
 
-  def initialize(links_data)
+  def initialize(links_data, filename = "report.csv")
     @links_data = links_data
+    @filename = filename
   end
 
   def generate
-    CSV.open(FILE_NAME, "wb") do |csv|
+    CSV.open(@filename, "wb") do |csv|
       csv << HEADER
-      filter_links.each { |link| csv << link.values }
+      filter_links.each { |link| csv << link_data_array(link) }
     end
   end
 
   private
 
+  def link_data_array(link)
+    [
+      link.source_file,
+      link.target,
+      link.type,
+      link.anchor,
+      link.reference_intact?,
+      link.response_status,
+      link.link_string,
+      link.link_text,
+      link.line_no
+    ]
+  end
+
   def filter_links
     @links_data.select do |link|
-      problematic_remote_link?(link) || problematic_anchor_link?(link)
+      link.type != 'remote' && (problematic_remote_link?(link) || problematic_anchor_link?(link))
     end
   end
 
   def problematic_remote_link?(link)
-    link[:link_type] == 'remote' && link[:response_status] != '200'
+    link.type == 'remote' && link.response_status != '200'
   end
 
   def problematic_anchor_link?(link)
-    link[:anchor] && !link[:reference_intact]
+    link.anchor && !link.reference_intact?
   end
 end
 
-# Using the ReportGenerator class in the generate_report function
-def generate_report(links_data)
-  generator = ReportGenerator.new(links_data)
-  generator.generate
-end

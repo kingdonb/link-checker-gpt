@@ -1,3 +1,5 @@
+require './lib/fetch/http_client'
+
 class SitemapFetcher
   class RedirectionError < StandardError; end
   class HTTPError < StandardError; end
@@ -5,11 +7,16 @@ class SitemapFetcher
   MAX_REDIRECTS = 5
 
   def initialize(domain, masquerade_domain)
+    puts "Initializing with domain: #{domain} and masquerade_domain: #{masquerade_domain}"
+
     @domain = domain
     @masquerade_domain = masquerade_domain
-    @sitemap_url = URI.join("https://", domain, "sitemap.xml")
+    @sitemap_url = URI.join("https://#{domain}", "sitemap.xml")
+    puts "Constructed sitemap_url: #{@sitemap_url}"
+
     @redirect_count = MAX_REDIRECTS
-    @http = build_http_client
+    http_client = Fetch::HttpClient.new(@sitemap_url)
+    @http = http_client.http
   end
 
   def fetch_sitemap_urls
@@ -27,12 +34,6 @@ class SitemapFetcher
   end
 
   private
-
-  def build_http_client
-    http = Net::HTTP.new(@sitemap_url.host, @sitemap_url.port)
-    http.use_ssl = true if @sitemap_url.scheme == "https"
-    http
-  end
 
   def fetch_content
     response = @http.get(@sitemap_url.path)
