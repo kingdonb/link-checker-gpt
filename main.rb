@@ -1,4 +1,4 @@
-
+#!/usr/bin/env ruby
 require 'nokogiri'
 require 'net/http'
 require 'csv'
