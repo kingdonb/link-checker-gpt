@@ -1,3 +1,6 @@
+require './lib/cache_helper'
+require './lib/url_helper'
+
 class Link
   attr_accessor :source_file, :target, :type, :anchor,
                 :response_status, :link_string, :link_text, :line_no, :reference_intact
@@ -46,7 +49,7 @@ class Link
   end
 
   def download_and_store
-    cache_path = get_cache_path
+    cache_path = CacheHelper.get_cache_path(@source_file)
     unless File.exist?(cache_path)
       html_content = Net::HTTP.get(URI(@source_file))
       FileUtils.mkdir_p(File.dirname(cache_path))
@@ -66,6 +69,14 @@ class Link
     @reference_intact
   end
 
+  def set_error(error_message)
+    @error = error_message
+  end
+
+  def has_error?
+    !@error.nil?
+  end
+
   private
 
   def determine_type
@@ -77,27 +88,12 @@ class Link
   end
 
   def extract_anchor
-    @anchor = URI(@link_string).fragment
-  rescue URI::InvalidURIError
-    @anchor = URI(URI::Parser.new.escape(@link_string)).fragment
+    @anchor = URLHelper.extract_fragment(@link_string)
   end
 
   def make_absolute
     return unless @link_string
-    @target = URI.join(@source_file, @link_string).to_s
-  rescue URI::InvalidURIError
-    @target = URI.join(@source_file, URI::Parser.new.escape(@link_string)).to_s
-    nil
-  end
-
-  def get_cache_path
-    uri = URI(@source_file)
-    cache_path = "cache" + uri.path
-    # If the path doesn't have a common file extension, treat it as a directory.
-    unless cache_path.match(/\.(html|xml|json|txt|js|css|jpg|jpeg|png|gif)$/i)
-      cache_path += "/index.html"
-    end
-    cache_path
+    @target = URLHelper.make_absolute(@source_file, @link_string)
   end
 end
 

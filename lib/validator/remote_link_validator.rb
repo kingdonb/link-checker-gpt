@@ -15,13 +15,13 @@ class RemoteLinkValidator < BaseLinkValidator
       retries += 1
       retry if retries < MAX_RETRIES
       puts "Error after #{MAX_RETRIES} retries for link #{link.target}: #{e.message}"
-      link.response_status = "Timeout"
+      link.set_error "Timeout"
     rescue SocketError => e
       puts "Network error for link #{link.target}: #{e.message}"
-      link.response_status = "Network Error"
+      link.set_error "Network Error"
     rescue StandardError => e
       puts "Unexpected error for link #{link.target}: #{e.message}"
-      link.response_status = "Error"
+      link.set_error "Error (#{e.message})"
     end
   end
 end
