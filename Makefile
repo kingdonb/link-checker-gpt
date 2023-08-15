@@ -1,4 +1,6 @@
 .PHONY: main clean-cache preview all clean normalize summary
+SED := $(shell command -v gsed 2> /dev/null || echo sed)
+
 all: main clean-cache preview normalize summary
 
 main:
@@ -24,13 +26,13 @@ clean: clean-cache
 
 normalize: report.csv preview-report.csv
 	@# Normalize the main report.csv
-	@gsed -i '1d' report.csv
+	@$(SED) -i '1d' report.csv
 	@PREVIEW_DOMAIN=$(shell if [ -z "$(PREVIEW_URL)" ]; then echo "deploy-preview-1573--fluxcd.netlify.app"; else echo "$(PREVIEW_URL)"; fi) ;\
-		gsed -i "s/fluxcd.io/$$PREVIEW_DOMAIN/1; s/fluxcd.io/$$PREVIEW_DOMAIN/1" report.csv
+		$(SED) -i "s/fluxcd.io/$$PREVIEW_DOMAIN/1; s/fluxcd.io/$$PREVIEW_DOMAIN/1" report.csv
 	@sort -o report.csv report.csv
 	
 	@# Normalize the preview-report.csv
-	@gsed -i '1d' preview-report.csv
+	@$(SED) -i '1d' preview-report.csv
 	@sort -o preview-report.csv preview-report.csv
 
 summary:
