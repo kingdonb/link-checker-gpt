@@ -1,4 +1,4 @@
-.PHONY: main clean-cache preview all clean
+.PHONY: main clean-cache preview all clean normalize
 all: main clean-cache preview
 
 main:
@@ -15,3 +15,13 @@ preview:
 clean: clean-cache
 	@rm -f report.csv preview-report.csv
 	@echo "Clean complete!"
+
+normalize:
+	@# Normalize the main report.csv
+	@gsed -i '1d' report.csv
+	@awk 'NR==1{print $0; next} {print $0 | "sort"}' report.csv > tmp.csv && mv tmp.csv report.csv
+	@gsed -i 's/fluxcd.io/deploy-preview-1573--fluxcd.netlify.app/1; s/fluxcd.io/deploy-preview-1573--fluxcd.netlify.app/1' report.csv
+	
+	@# Normalize the preview-report.csv
+	@gsed -i '1d' preview-report.csv
+	@awk 'NR==1{print $0; next} {print $0 | "sort"}' preview-report.csv > tmp.csv && mv tmp.csv preview-report.csv
