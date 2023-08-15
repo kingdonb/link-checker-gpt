@@ -15,9 +15,18 @@ class LinkAnalyzer
     sitemap_urls.each_slice(SLICE_SIZE) do |slice|
       threads << Thread.new do
         slice.each do |url|
-          link = ensure_link(links_data, url, nil)
+          # These links come from the sitemap, so they don't have any source yet
+          link = ensure_link(links_data, url, url, nil)
           begin
-            url = masquerade_url(url) if @masquerade_domain
+            # Determine the source_url first
+            domain_present = URI.parse(url).host.nil? ? false : true
+
+            if domain_present
+              source_url = masquerade_url(url) if @masquerade_domain
+            else
+              source_url = URI.join(@masquerade_domain, url).to_s
+            end
+
             base_url, fragment = url.split('#', 2)
             fragment = URI::Parser.new.escape(fragment) if fragment
             full_url = fragment ? "#{base_url}##{fragment}" : base_url
@@ -39,9 +48,10 @@ class LinkAnalyzer
               joined_url = URI.join(url, base_url).to_s
               target_url = fragment ? "#{joined_url}##{fragment}" : joined_url
 
-              link = ensure_link(links_data, target_url, link_element)
+              link = ensure_link(links_data, source_url, target_url, link_element)
             end
           rescue StandardError => e
+
             link.response_status = "Error: #{e.message}"
             puts "Error downloading or analyzing URL #{url}: #{e.message}"
           end
@@ -67,10 +77,10 @@ class LinkAnalyzer
 
   def ensure_link(links_data, url, link_element)
     LINKS_MUTEX.synchronize do
-      unless links_data[url]
-        links_data[url] = Link.new(url, link_element, @domain)
-      end
-      links_data[url]
+      # Use both the target URL and source URL as the key to ensure uniqueness
+      key = "#{source_url}::#{target_url}"
+      links_data[key] ||= Link.new(source_url, link_element)
+      links_data[key]
     end
   end
 end
