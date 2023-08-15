@@ -46,6 +46,7 @@ runs:
       shell: bash
 
     - name: Run summary
+      id: run-summary
       run: bundle exec make summary
       continue-on-error: true
       shell: bash
@@ -57,3 +58,17 @@ runs:
     - name: Comment on PR if necessary
       run: ./.github/scripts/comment_on_pr.sh
       shell: bash
+
+    - name: Upload pr-summary.csv
+      uses: actions/upload-artifact@v3
+      if: always() && steps.run-summary.outcome == 'failure'
+      with:
+        name: pr-summary
+        path: pr-summary.csv
+
+    - name: Upload baseline-unresolved.csv
+      uses: actions/upload-artifact@v3
+      if: always() && steps.run-summary.outcome == 'success'
+      with:
+        name: baseline-unresolved
+        path: baseline-unresolved.csv
