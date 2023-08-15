@@ -75,7 +75,7 @@ class LinkAnalyzer
     end
   end
 
-  def ensure_link(links_data, url, link_element)
+  def ensure_link(links_data, source_url, target_url, link_element)
     LINKS_MUTEX.synchronize do
       # Use both the target URL and source URL as the key to ensure uniqueness
       key = "#{source_url}::#{target_url}"
