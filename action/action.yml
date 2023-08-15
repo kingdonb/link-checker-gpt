@@ -39,8 +39,6 @@ jobs:
 
     - name: Comment on PR if necessary
       run: ./.github/scripts/comment_on_pr.sh
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload pr-summary.csv
       uses: actions/upload-artifact@v3
