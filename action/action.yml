@@ -1,12 +1,20 @@
-name: Link Checker
-
-on: [pull_request]
-
-jobs:
-  check-links:
-    runs-on: ubuntu-latest
-
-    steps:
+name: 'Link Checker Action'
+description: 'Checks the integrity of links in the PR'
+inputs:
+  token:
+    description: 'GitHub Token'
+    required: true
+  prNumber:
+    description: 'Pull Request Number'
+    required: true
+outputs:
+  pr-summary:
+    description: 'Summary CSV for problematic links'
+  baseline-unresolved:
+    description: 'Baseline unresolved links CSV'
+runs:
+  using: 'composite'
+  steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
@@ -16,40 +24,36 @@ jobs:
         ruby-version: 3.0
         bundler-cache: true
 
+    - name: Extract PR Number & Set Preview URL
+      run: |
+        echo "PREVIEW_URL=deploy-preview-${{ inputs.prNumber }}--fluxcd.netlify.app" >> $GITHUB_ENV
+      shell: bash
+
     - name: Run main target
       run: make main
+      shell: bash
 
     - name: Clean cache
       run: make clean-cache
+      shell: bash
 
     - name: Run with preview
       run: make run_with_preview
+      shell: bash
 
     - name: Normalize reports
       run: make normalize
+      shell: bash
 
     - name: Run summary
-      id: run-summary
       run: make summary
       continue-on-error: true
+      shell: bash
 
     - name: Check summary results
       run: ./.github/scripts/check_summary.sh
-      if: steps.run-summary.outcome == 'failure'
+      shell: bash
 
     - name: Comment on PR if necessary
       run: ./.github/scripts/comment_on_pr.sh
-
-    - name: Upload pr-summary.csv
-      uses: actions/upload-artifact@v3
-      if: always() && steps.run-summary.outcome == 'failure'
-      with:
-        name: pr-summary
-        path: pr-summary.csv
-
-    - name: Upload baseline-unresolved.csv
-      uses: actions/upload-artifact@v3
-      if: always() && steps.run-summary.outcome == 'success'
-      with:
-        name: baseline-unresolved
-        path: baseline-unresolved.csv
+      shell: bash

@@ -1,0 +1,14 @@
+name: Test Link Checker Action
+
+on: [pull_request]
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check Links using Action
+      uses: ./action/
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        prNumber: ${{ github.event.pull_request.number }}
