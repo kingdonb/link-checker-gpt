@@ -16,8 +16,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+    # (A checkout is needed for the local test, else you'll see the Error:)
+    # Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under
+    # '/home/runner/work/link-checker-gpt/link-checker-gpt/action'. Did you
+    # forget to run actions/checkout before running your local action?
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Check Links using Link Checker Action
       uses: ./action/  # say instead "uses: kingdonb/link-checker-gpt/action@main"
       with:
         token: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment
-        prNumber: ${{ github.event.pull_request.number }} # the current PR number
+        # prNumber: ${{ github.event.pull_request.number }} # the current PR number
+        prNumber: 1573 # We're testing against this PR until the merge is finished
