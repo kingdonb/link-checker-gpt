@@ -79,7 +79,7 @@ class LinkAnalyzer
     LINKS_MUTEX.synchronize do
       # Use both the target URL and source URL as the key to ensure uniqueness
       key = "#{source_url}::#{target_url}"
-      links_data[key] ||= Link.new(url, link_element, @domain)
+      links_data[key] ||= Link.new(source_url, link_element, @domain)
       links_data[key]
     end
   end
