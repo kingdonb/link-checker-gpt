@@ -11,7 +11,7 @@ class SitemapFetcher
 
     @domain = domain
     @masquerade_domain = masquerade_domain
-    @sitemap_url = URI.join("https://#{domain}", "sitemap.xml")
+    @sitemap_url = URI.join("https://#{masquerade_domain}", "sitemap.xml")
     puts "Constructed sitemap_url: #{@sitemap_url}"
 
     @redirect_count = MAX_REDIRECTS
