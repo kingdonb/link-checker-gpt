@@ -17,9 +17,8 @@ Assuming it runs to completion, it will produce a report in report.csv
 
 I can import this report into Google Drive and mark it up as I fix the links.
 
-At some point this could be improved to work as a CI check, but we will need
-to fix most of the links first, and find a way to make exceptions for any more
-that cannot be fixed.
+This nearly works as a CI check, but we will need to fix many of the links
+first, and find a way to make exceptions for any more that cannot be fixed.
 
 ### Broken feature: Sitemap Caching
 
