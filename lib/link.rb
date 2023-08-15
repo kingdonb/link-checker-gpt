@@ -9,10 +9,6 @@ class Link
     @source_file = source_url
     @domain = domain
 
-    # if @source_file == "https://fluxcd.io/guides/mozilla-sops/#using-various-cloud-providers"
-    #   raise StandardError
-    # end
-
     if link_element
       @link_string = link_element['href']
       link_text = link_element.text

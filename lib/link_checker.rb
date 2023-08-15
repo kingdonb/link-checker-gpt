@@ -57,7 +57,6 @@ class LinkChecker
     validator = LinkValidator.new(@links_data, @domain, @masquerade_domain)
     @links_data = validator.validate_links
   rescue StandardError => e
-    # PRY_MUTEX.synchronize{binding.pry}
     puts "Error validating links: #{e.message}"
     exit
   end

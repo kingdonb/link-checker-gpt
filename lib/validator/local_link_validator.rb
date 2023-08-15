@@ -23,9 +23,7 @@ class LocalLinkValidator < BaseLinkValidator
       escaped = escaped_anchor
       @link.check_reference_intact!(escaped_anchor, doc)
     end
-  rescue Nokogiri::CSS::SyntaxError => e
-    # puts e.backtrace
-    raise e
-    # PRY_MUTEX.synchronize{binding.pry}
+  # rescue Nokogiri::CSS::SyntaxError => e
+  #   raise e
   end
 end
