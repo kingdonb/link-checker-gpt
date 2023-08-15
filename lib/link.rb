@@ -11,7 +11,7 @@ class Link
 
     if link_element
       @link_string = link_element['href']
-      @link_text = link_element.text.strip
+      link_text = link_element.text
       @line_no = link_element.line
       determine_type
       extract_anchor
@@ -23,6 +23,10 @@ class Link
     end
 
     make_absolute
+  end
+
+  def link_text=(value)
+    @link_text = value.strip.gsub(/\s+/, ' ')
   end
 
   def to_h
