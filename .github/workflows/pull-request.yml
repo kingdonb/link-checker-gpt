@@ -1,4 +1,13 @@
-name: Test Link Checker Action
+name: Example Link Checker Action
+
+# This would currently only work if your org is fluxcd, and you're trying to
+# check the website repo (and even then it's still kind of a longshot, because
+# it is meant to run after the preview build is online, but there's no order
+# between jobs AFAICT on GitHub Actions.)
+#
+# But as an example, this probably has all the essential elements. We could
+# test it out straightforwardly in a fork, if forks did netlify builds (sadly
+# there is no easy way to make that work without additional netlify accounts)
 
 on: [pull_request]
 
@@ -7,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check Links using Action
-      uses: ./action/
+    - name: Check Links using Link Checker Action
+      uses: ./action/  # say instead "uses: kingdonb/link-checker-gpt/action@main"
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        prNumber: ${{ github.event.pull_request.number }}
+        token: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment
+        prNumber: ${{ github.event.pull_request.number }} # the current PR number
