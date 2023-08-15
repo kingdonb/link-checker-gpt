@@ -72,3 +72,7 @@ runs:
       with:
         name: baseline-unresolved
         path: baseline-unresolved.csv
+
+    - name: Fail the workflow if there are issues
+      run: exit 1
+      if: steps.run-summary.outcome == 'failure'
