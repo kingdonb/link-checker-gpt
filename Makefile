@@ -13,7 +13,7 @@ preview:
 	ruby ./main.rb fluxcd.io deploy-preview-1573--fluxcd.netlify.app preview-report.csv false
 
 clean: clean-cache
-	@rm -f report.csv preview-report.csv
+	@rm -f report.csv preview-report.csv pr-summary.csv baseline-unresolved.csv
 	@echo "Clean complete!"
 
 normalize:
