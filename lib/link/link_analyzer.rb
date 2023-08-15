@@ -18,7 +18,11 @@ class LinkAnalyzer
           link = ensure_link(links_data, url, nil)
           begin
             url = masquerade_url(url) if @masquerade_domain
-            puts "Visiting: #{url}"
+            base_url, fragment = url.split('#', 2)
+            fragment = URI::Parser.new.escape(fragment) if fragment
+            full_url = fragment ? "#{base_url}##{fragment}" : base_url
+
+            puts "Visiting: #{full_url}"
             doc = link.download_and_store
 
             # Extracting all the links from the page
@@ -27,7 +31,14 @@ class LinkAnalyzer
               # Skip links without href or with href set to '#'
               next if link_href.nil? || link_href.strip == '#'
 
-              target_url = URI.join(url, link_href).to_s
+              # Splitting the base URL and fragment for proper handling
+              base_url, fragment = link_href.split('#', 2)
+              fragment = URI::Parser.new.escape(fragment) if fragment
+
+              # Combine the base URL with the original URL and append the fragment if present
+              joined_url = URI.join(url, base_url).to_s
+              target_url = fragment ? "#{joined_url}##{fragment}" : joined_url
+
               link = ensure_link(links_data, target_url, link_element)
             end
           rescue StandardError => e

@@ -61,6 +61,7 @@ class Link
     else
       response = Net::HTTP.get_response(URI(@source_file))
       html_content = response.body
+      html_content.force_encoding('UTF-8')
       # Ensure the directory exists before writing the cache
       FileUtils.mkdir_p(File.dirname(cache_path))
       CacheHelper.write_to_cache(@source_file, html_content, response.code)
