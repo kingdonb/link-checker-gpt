@@ -1,7 +1,11 @@
-This link checker is designed for use with the FluxCD website preview environments:
+# Link-Checker GPT
+
+This link checker is so-named because it was mostly written by ChatGPT.
+
+It is designed for use with the FluxCD website preview environments:
 
 ```ruby
-ruby link_checker.rb deploy-preview-1573--fluxcd.netlify.app
+ruby main.rb deploy-preview-1573--fluxcd.netlify.app
 ```
 
 It may behave differently when run against `fluxcd.io` and the preview site,
