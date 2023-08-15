@@ -8,11 +8,7 @@ class LocalLinkValidator < BaseLinkValidator
     normalized_url = URI(@link.target).normalize.to_s
     cache_path = CacheHelper.get_cache_path(normalized_url)
 
-    unless File.exist?(cache_path)
-      @link.download_and_store
-    end
-
-    return @link.response_status unless File.exist?(cache_path)
+    return @link.response_status = "Not Cached" unless File.exist?(cache_path)
 
     doc = nil
     @links_mutex.synchronize do
