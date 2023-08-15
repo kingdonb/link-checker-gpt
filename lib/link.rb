@@ -15,6 +15,11 @@ class Link
       @line_no = link_element.line
       determine_type
       extract_anchor
+    else
+      # If no link_element is provided, assume the source is the target and type is local.
+      @link_string = source_url
+      @target = source_url
+      @type = 'local'
     end
 
     make_absolute
@@ -50,12 +55,16 @@ class Link
 
   def download_and_store
     cache_path = CacheHelper.get_cache_path(@source_file)
-    unless File.exist?(cache_path)
-      html_content = Net::HTTP.get(URI(@source_file))
-      FileUtils.mkdir_p(File.dirname(cache_path))
-      File.write(cache_path, html_content)
+    if File.exist?(cache_path)
+      html_content, status = CacheHelper.read_from_cache(@source_file)
+      @response_status = status if status && status.to_i >= 400
     else
-      html_content = File.read(cache_path)
+      response = Net::HTTP.get_response(URI(@source_file))
+      html_content = response.body
+      # Ensure the directory exists before writing the cache
+      FileUtils.mkdir_p(File.dirname(cache_path))
+      CacheHelper.write_to_cache(@source_file, html_content, response.code)
+      @response_status = response.code if response.code.to_i >= 400
     end
 
     Nokogiri::HTML(html_content)
