@@ -1,5 +1,5 @@
-.PHONY: main clean-cache preview all clean normalize
-all: main clean-cache preview
+.PHONY: main clean-cache preview all clean normalize summary
+all: main clean-cache preview normalize summary
 
 main:
 	ruby ./main.rb
@@ -25,3 +25,6 @@ normalize:
 	@# Normalize the preview-report.csv
 	@gsed -i '1d' preview-report.csv
 	@awk 'NR==1{print $0; next} {print $0 | "sort"}' preview-report.csv > tmp.csv && mv tmp.csv preview-report.csv
+
+summary:
+	ruby ./lib/summary.rb
