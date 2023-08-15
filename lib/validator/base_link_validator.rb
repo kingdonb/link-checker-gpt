@@ -1,9 +1,10 @@
 class BaseLinkValidator
-  attr_reader :link, :parsed_docs_cache
+  attr_reader :link, :parsed_docs_cache, :links_mutex
 
-  def initialize(link, parsed_docs_cache = {})
+  def initialize(link, parsed_docs_cache = {}, links_mutex = Mutex.new)
     @link = link
     @parsed_docs_cache = parsed_docs_cache
+    @links_mutex = links_mutex
   end
 
   def valid_anchor?

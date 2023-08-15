@@ -1,0 +1,57 @@
+name: Link Checker
+
+on: [pull_request]
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Ruby 3.0
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0
+        bundler-cache: true
+
+    - name: Run main target
+      run: make main
+
+    - name: Clean cache
+      run: make clean-cache
+
+    - name: Run with preview
+      run: make run_with_preview
+
+    - name: Normalize reports
+      run: make normalize
+
+    - name: Run summary
+      id: run-summary
+      run: make summary
+      continue-on-error: true
+
+    - name: Check summary results
+      run: ./.github/scripts/check_summary.sh
+      if: steps.run-summary.outcome == 'failure'
+
+    - name: Comment on PR if necessary
+      run: ./.github/scripts/comment_on_pr.sh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload pr-summary.csv
+      uses: actions/upload-artifact@v3
+      if: always() && steps.run-summary.outcome == 'failure'
+      with:
+        name: pr-summary
+        path: pr-summary.csv
+
+    - name: Upload baseline-unresolved.csv
+      uses: actions/upload-artifact@v3
+      if: always() && steps.run-summary.outcome == 'success'
+      with:
+        name: baseline-unresolved
+        path: baseline-unresolved.csv

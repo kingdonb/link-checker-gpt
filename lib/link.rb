@@ -1,3 +1,6 @@
+require './lib/cache_helper'
+require './lib/url_helper'
+
 class Link
   attr_accessor :source_file, :target, :type, :anchor,
                 :response_status, :link_string, :link_text, :line_no, :reference_intact
@@ -8,13 +11,22 @@ class Link
 
     if link_element
       @link_string = link_element['href']
-      @link_text = link_element.text.strip
+      link_text = link_element.text
       @line_no = link_element.line
       determine_type
       extract_anchor
+    else
+      # If no link_element is provided, assume the source is the target and type is local.
+      @link_string = source_url
+      @target = source_url
+      @type = 'local'
     end
 
     make_absolute
+  end
+
+  def link_text=(value)
+    @link_text = value.strip.gsub(/\s+/, ' ')
   end
 
   def to_h
@@ -46,13 +58,18 @@ class Link
   end
 
   def download_and_store
-    cache_path = get_cache_path
-    unless File.exist?(cache_path)
-      html_content = Net::HTTP.get(URI(@source_file))
-      FileUtils.mkdir_p(File.dirname(cache_path))
-      File.write(cache_path, html_content)
+    cache_path = CacheHelper.get_cache_path(@source_file)
+    if File.exist?(cache_path)
+      html_content, status = CacheHelper.read_from_cache(@source_file)
+      @response_status = status if status && status.to_i >= 400
     else
-      html_content = File.read(cache_path)
+      response = Net::HTTP.get_response(URI(@source_file))
+      html_content = response.body
+      html_content.force_encoding('UTF-8')
+      # Ensure the directory exists before writing the cache
+      FileUtils.mkdir_p(File.dirname(cache_path))
+      CacheHelper.write_to_cache(@source_file, html_content, response.code)
+      @response_status = response.code if response.code.to_i >= 400
     end
 
     Nokogiri::HTML(html_content)
@@ -66,6 +83,14 @@ class Link
     @reference_intact
   end
 
+  def set_error(error_message)
+    @error = error_message
+  end
+
+  def has_error?
+    !@error.nil?
+  end
+
   private
 
   def determine_type
@@ -77,27 +102,12 @@ class Link
   end
 
   def extract_anchor
-    @anchor = URI(@link_string).fragment
-  rescue URI::InvalidURIError
-    @anchor = URI(URI::Parser.new.escape(@link_string)).fragment
+    @anchor = URLHelper.extract_fragment(@link_string)
   end
 
   def make_absolute
     return unless @link_string
-    @target = URI.join(@source_file, @link_string).to_s
-  rescue URI::InvalidURIError
-    @target = URI.join(@source_file, URI::Parser.new.escape(@link_string)).to_s
-    nil
-  end
-
-  def get_cache_path
-    uri = URI(@source_file)
-    cache_path = "cache" + uri.path
-    # If the path doesn't have a common file extension, treat it as a directory.
-    unless cache_path.match(/\.(html|xml|json|txt|js|css|jpg|jpeg|png|gif)$/i)
-      cache_path += "/index.html"
-    end
-    cache_path
+    @target = URLHelper.make_absolute(@source_file, @link_string)
   end
 end
 
