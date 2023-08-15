@@ -17,7 +17,12 @@ At some point this could be improved to work as a CI check, but we will need
 to fix most of the links first, and find a way to make exceptions for any more
 that cannot be fixed.
 
+### Broken feature: Sitemap Caching
+
 There is a cache, so if you have run the script before the "Visiting links"
 step will not be repeated unless you run `make clean` first. This is to help
 with iterative development, since most of the runtime errors come from the
 validate method and anchor checker, they can be debugged easily from a cache.
+
+However, it doesn't work. So make sure if you are running this more than one
+time, you always run at least `make clean-cache` between separate executions.
