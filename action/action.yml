@@ -30,7 +30,7 @@ runs:
       shell: bash
 
     - name: Run main target
-      run: make main
+      run: bundle exec make main
       shell: bash
 
     - name: Clean cache
@@ -38,7 +38,7 @@ runs:
       shell: bash
 
     - name: Run with preview
-      run: make run_with_preview
+      run: bundle exec make run_with_preview
       shell: bash
 
     - name: Normalize reports
@@ -46,7 +46,7 @@ runs:
       shell: bash
 
     - name: Run summary
-      run: make summary
+      run: bundle exec make summary
       continue-on-error: true
       shell: bash
 
