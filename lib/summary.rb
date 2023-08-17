@@ -5,7 +5,7 @@ logger = Logger.new($stdout)
 logger.level = Logger::INFO
 logger.formatter = proc do |severity, _datetime, _progname, msg|
   # datefmt = datetime.strftime('%Y-%m-%dT%H:%M:%S.%6N')
-  "#{severity.ljust(5)} #{msg}\n"
+  "#{severity[0].ljust(2)} #{msg}\n"
 end
 
 HEADER = ["Link Source", "Link Target", "Type", "Anchor?", "Reference Intact?", "Response Status", "Link String", "Link Text", "Line No."]
@@ -59,7 +59,7 @@ if new_issues.count > 0
   end
 
   logger.debug "Read pr-summary.csv for the full list of new issues."
-  logger.warn "There are new issues to correct in the preview site."
+  logger.warn "Please correct any bad links created by the preview build."
   logger.fatal "Exit (1)!"
   exit(1)
 else
