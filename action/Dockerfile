@@ -17,10 +17,10 @@ COPY Gemfile Gemfile.lock /opt/link-checker
 # Install Ruby dependencies
 RUN gem install bundler -v 2.4.10 && bundle install
 
-COPY Makefile scripts main.rb lib /opt/link-checker/
+COPY . /opt/link-checker/
 
 # Copies your code file from your action repository to the filesystem path `/` of the container
-COPY entrypoint.sh /entrypoint.sh
+# COPY entrypoint.sh /entrypoint.sh
 
 # Executes `entrypoint.sh` when the Docker container starts up
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/opt/link-checker/entrypoint.sh"]
