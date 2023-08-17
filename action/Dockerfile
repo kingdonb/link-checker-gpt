@@ -16,4 +16,4 @@ COPY . /app
 RUN gem install bundler -v 2.4.10 && bundle install
 
 # Command to run on container start
-CMD [ "entrypoint.sh" ]
+CMD [ "./entrypoint.sh" ]
