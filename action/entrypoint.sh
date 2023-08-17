@@ -14,10 +14,10 @@ export PREVIEW_URL
 make -C /opt/link-checker run_with_preview
 
 # Normalize reports
-make normalize
+make -C /opt/link-checker normalize
 
 # Run summary
-make summary
+make -C /opt/link-checker summary
 
 # Check summary results
 /opt/link-checker/scripts/check_summary.sh
