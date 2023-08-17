@@ -11,10 +11,10 @@ FROM ruby:3.0
 # WORKDIR /linkchecker
 
 # Copy over your application
+WORKDIR /opt/link-checker
 COPY Gemfile Gemfile.lock /opt/link-checker
 
 # Install Ruby dependencies
-WORKDIR /opt/link-checker
 RUN gem install bundler -v 2.4.10 && bundle install
 
 COPY Makefile scripts main.rb lib /opt/link-checker/
