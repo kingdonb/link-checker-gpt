@@ -27,6 +27,8 @@ When the PR check fails, you can download a zip file with a CSV report in it.
 The bot might also comment on your PR. It's trying to get you to reduce the
 report noise. If you do what it says, then this ugly report will go away! ✅
 
+TODO: We will fix this by minimizing the UI.
+
 ### Broken feature: Sitemap Caching
 
 There is a cache, so if you have run the script before the "Visiting links"
@@ -36,3 +38,6 @@ validate method and anchor checker, they can be debugged easily from a cache.
 
 However, it doesn't work. So make sure if you are running this more than one
 time, you always run at least `make clean-cache` between separate executions.
+
+TODO: We will remove the cache reuse, it should always be invalidated unless
+it can be proven to still be valid. It's not needed except for one-time use.
