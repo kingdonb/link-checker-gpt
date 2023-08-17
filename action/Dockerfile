@@ -10,10 +10,15 @@ FROM ruby:3.0
 WORKDIR /app
 
 # Copy over your application
-COPY . /app
+COPY Gemfile Gemfile.lock /app
 
 # Install Ruby dependencies
 RUN gem install bundler -v 2.4.10 && bundle install
 
-# Command to run on container start
-CMD [ "./entrypoint.sh" ]
+COPY Makefile scripts main.rb lib /app/
+
+# Copies your code file from your action repository to the filesystem path `/` of the container
+COPY entrypoint.sh /entrypoint.sh
+
+# Executes `entrypoint.sh` when the Docker container starts up
+ENTRYPOINT ["/entrypoint.sh"]
