@@ -6,13 +6,14 @@ class SitemapFetcher
 
   MAX_REDIRECTS = 5
 
-  def initialize(domain, masquerade_domain)
-    puts "Initializing with domain: #{domain} and masquerade_domain: #{masquerade_domain}"
-
+  def initialize(domain, masquerade_domain, logger)
     @domain = domain
     @masquerade_domain = masquerade_domain
+    @logger = logger
+
+    @logger.info "Initializing with domain: #{domain} and masquerade_domain: #{masquerade_domain}"
     @sitemap_url = URI.join("https://#{masquerade_domain}", "sitemap.xml")
-    puts "Constructed sitemap_url: #{@sitemap_url}"
+    @logger.info "Constructed sitemap_url: #{@sitemap_url}"
 
     @redirect_count = MAX_REDIRECTS
     http_client = Fetch::HttpClient.new(@sitemap_url)

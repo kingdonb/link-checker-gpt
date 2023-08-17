@@ -3,9 +3,10 @@ LINKS_MUTEX = Thread::Mutex.new
 class LinkAnalyzer
   SLICE_SIZE = 10
 
-  def initialize(domain, masquerade_domain)
+  def initialize(domain, masquerade_domain, logger)
     @domain = domain
     @masquerade_domain = masquerade_domain
+    @logger = logger
   end
 
   def analyze_links(sitemap_urls)
@@ -31,7 +32,7 @@ class LinkAnalyzer
             fragment = URI::Parser.new.escape(fragment) if fragment
             full_url = fragment ? "#{base_url}##{fragment}" : base_url
 
-            puts "Visiting: #{full_url}"
+            @logger.debug "Visiting: #{full_url}"
             doc = link.download_and_store
 
             # Extracting all the links from the page
@@ -53,7 +54,7 @@ class LinkAnalyzer
           rescue StandardError => e
 
             link.response_status = "Error: #{e.message}"
-            puts "Error downloading or analyzing URL #{url}: #{e.message}"
+            @logger.warn "Error downloading or analyzing URL #{url}: #{e.message}"
           end
         end
       end

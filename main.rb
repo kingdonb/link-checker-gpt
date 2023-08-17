@@ -7,6 +7,7 @@ require 'json'
 require 'open-uri'
 require 'uri'
 # require 'pry'
+require 'logger'
 
 require './lib/link_checker'
 
@@ -25,11 +26,15 @@ end
 
 # Main Execution
 if __FILE__ == $0
+  logger = Logger.new($stdout)
+  log_level = ENV.fetch('RUBY_LOG_LEVEL', 'INFO')
+  logger.level = Logger.const_get(log_level)
+
   domain = ARGV[0] || "fluxcd.io"
   masq_domain = ARGV[1] || "fluxcd.io"
   report_file = ARGV[2] || "report.csv"
   remote_links = parse_boolean(ARGV[3]) || false
 
-  checker = LinkChecker.new(domain, masq_domain, report_file, remote_links)
+  checker = LinkChecker.new(domain, masq_domain, report_file, remote_links, logger)
   checker.run
 end

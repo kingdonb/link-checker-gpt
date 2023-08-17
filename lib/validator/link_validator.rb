@@ -4,7 +4,7 @@ require './lib/validator/local_link_validator'
 class LinkValidator
   MAX_THREADS = 4
 
-  def initialize(links_data, domain, masquerade_domain, process_remote_links = false)
+  def initialize(links_data, domain, masquerade_domain, process_remote_links = false, logger)
     @links_data = links_data
     adjust_links_target(domain, masquerade_domain)
 
@@ -13,6 +13,7 @@ class LinkValidator
     @domain = domain
     @masquerade_domain = masquerade_domain
     @process_remote_links = process_remote_links
+    @logger = logger
   end
 
   def validate_links

@@ -4,7 +4,7 @@ class RemoteLinkValidator < BaseLinkValidator
   MAX_RETRIES = 3
 
   def validate
-    puts "Validating: #{link.target}"
+    @logger.debug "Validating: #{link.target}"
 
     retries = 0
 
@@ -14,13 +14,13 @@ class RemoteLinkValidator < BaseLinkValidator
     rescue Net::OpenTimeout, Net::ReadTimeout => e
       retries += 1
       retry if retries < MAX_RETRIES
-      puts "Error after #{MAX_RETRIES} retries for link #{link.target}: #{e.message}"
+      @logger.warn "Error after #{MAX_RETRIES} retries for link #{link.target}: #{e.message}"
       link.set_error "Timeout"
     rescue SocketError => e
-      puts "Network error for link #{link.target}: #{e.message}"
+      @logger.warn "Network error for link #{link.target}: #{e.message}"
       link.set_error "Network Error"
     rescue StandardError => e
-      puts "Unexpected error for link #{link.target}: #{e.message}"
+      @logger.warn "Unexpected error for link #{link.target}: #{e.message}"
       link.set_error "Error (#{e.message})"
     end
   end
