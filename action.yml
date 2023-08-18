@@ -5,8 +5,16 @@ inputs:
   # token:
   #   description: 'GitHub Token'
   #   required: true
-  prNumber:
-    description: 'Pull Request Number'
+  # TODO: take a preview URL as input instead
+  # prNumber:
+  #   description: 'Pull Request Number'
+  #   required: true
+  #deploy-preview-${{ inputs.prNumber }}--fluxcd.netlify.app
+  productionDomain:
+    description: 'Live production site hostname'
+    required: true
+  previewDomain:
+    description: 'Preview site deployment hostname'
     required: true
 outputs:
   pr-summary:

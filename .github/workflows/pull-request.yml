@@ -1,13 +1,9 @@
 name: Example Link Checker Action
 
-# This would currently only work if your org is fluxcd, and you're trying to
-# check the website repo (and even then it's still kind of a longshot, because
-# it is meant to run after the preview build is online, but there's no order
-# between jobs AFAICT on GitHub Actions.)
-#
-# But as an example, this probably has all the essential elements. We could
-# test it out straightforwardly in a fork, if forks did netlify builds (sadly
-# there is no easy way to make that work without additional netlify accounts)
+# As an example, this probably has all the essential elements. We could test it
+# out straightforwardly in a fork, if forks did netlify builds (sadly there is
+# no easy way to make that work without additional netlify accounts - we can
+# try Fermyon Cloud tho, I hear bartholomew docs include a sitemap rhai script)
 
 on: [pull_request]
 
@@ -25,8 +21,10 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Check Links using Link Checker Action
-      uses: ./action/  # say instead "uses: kingdonb/link-checker-gpt/action@main"
+      uses: ./  # say instead "uses: kingdonb/link-checker-gpt@main" or @v1
       with:
         # token: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment
         # prNumber: ${{ github.event.pull_request.number }} # the current PR number
-        prNumber: 1573 # We're testing against this PR until the merge is finished
+        # prNumber: 1573 # We're testing against this PR until the merge is finished
+        productionDomain: fluxcd.io
+        previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app

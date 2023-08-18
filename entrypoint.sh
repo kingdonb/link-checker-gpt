@@ -7,8 +7,10 @@ make -C /opt/link-checker main
 make -C /opt/link-checker clean-cache
 
 # Use the provided PR number to construct the preview URL
-PREVIEW_URL="deploy-preview-$INPUT_PRNUMBER--fluxcd.netlify.app"
-export PREVIEW_URL
+# INPUT_PREVIEWURL="deploy-preview-$INPUT_PRNUMBER--fluxcd.netlify.app"
+# export PREVIEWURL
+export PRODUCTION_URL="$INPUT_PRODUCTIONDOMAIN"
+export PREVIEW_URL="$INPUT_PREVIEWDOMAIN"
 
 # Run with preview
 make -C /opt/link-checker run_with_preview
