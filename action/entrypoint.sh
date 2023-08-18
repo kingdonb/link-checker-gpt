@@ -20,7 +20,7 @@ make -C /opt/link-checker normalize
 make -C /opt/link-checker summary
 
 # Check summary results
-/opt/link-checker/scripts/check_summary.sh
+make -C /opt/link-checker check-summary
 
 # TODO: the workflow should nag issues in the baseline
 # /opt/link-checker/scripts/comment_on_pr.sh

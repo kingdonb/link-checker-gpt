@@ -37,3 +37,6 @@ normalize: report.csv preview-report.csv
 
 summary:
 	bundle exec ruby ./lib/summary.rb
+
+check-summary:
+	./scripts/check_summary.sh
