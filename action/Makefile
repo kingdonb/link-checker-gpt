@@ -4,7 +4,7 @@ SED := $(shell command -v gsed 2> /dev/null || echo sed)
 all: main clean-cache preview normalize summary
 
 main:
-	ruby ./main.rb
+	bundle exec ruby ./main.rb
 
 clean-cache:
 	@echo "Cleaning cache and progress data..."
@@ -12,13 +12,13 @@ clean-cache:
 	@rm -f links_data.json
 
 preview:
-	ruby ./main.rb fluxcd.io deploy-preview-1573--fluxcd.netlify.app preview-report.csv false
+	bundle exec ruby ./main.rb fluxcd.io deploy-preview-1573--fluxcd.netlify.app preview-report.csv false
 
 run_with_preview: preview-report.csv
 
 preview-report.csv:
 	@echo "Running with preview URL: $(PREVIEW_URL)"
-	ruby ./main.rb fluxcd.io $(PREVIEW_URL) preview-report.csv false
+	bundle exec ruby ./main.rb fluxcd.io $(PREVIEW_URL) preview-report.csv false
 
 clean: clean-cache
 	@rm -f report.csv preview-report.csv pr-summary.csv baseline-unresolved.csv
@@ -36,4 +36,7 @@ normalize: report.csv preview-report.csv
 	@sort -o preview-report.csv preview-report.csv
 
 summary:
-	ruby ./lib/summary.rb
+	bundle exec ruby ./lib/summary.rb
+
+check-summary:
+	./scripts/check_summary.sh

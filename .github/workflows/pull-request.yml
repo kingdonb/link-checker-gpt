@@ -27,6 +27,6 @@ jobs:
     - name: Check Links using Link Checker Action
       uses: ./action/  # say instead "uses: kingdonb/link-checker-gpt/action@main"
       with:
-        token: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment
+        # token: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment
         # prNumber: ${{ github.event.pull_request.number }} # the current PR number
         prNumber: 1573 # We're testing against this PR until the merge is finished

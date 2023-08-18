@@ -1,9 +1,10 @@
 name: 'Link Checker Action'
 description: 'Checks the integrity of links in the PR'
 inputs:
-  token:
-    description: 'GitHub Token'
-    required: true
+  # TODO: make this action comment on the PR
+  # token:
+  #   description: 'GitHub Token'
+  #   required: true
   prNumber:
     description: 'Pull Request Number'
     required: true
@@ -13,67 +14,85 @@ outputs:
   baseline-unresolved:
     description: 'Baseline unresolved links CSV'
 runs:
-  using: 'composite'
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+  using: 'docker'
+  image: 'Dockerfile'
 
-    - name: Set up Ruby 3.0
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.0
-        bundler-cache: true
-
-    - name: Extract PR Number & Set Preview URL
-      run: |
-        echo "PREVIEW_URL=deploy-preview-${{ inputs.prNumber }}--fluxcd.netlify.app" >> $GITHUB_ENV
-      shell: bash
-
-    - name: Run main target
-      run: bundle exec make main
-      shell: bash
-
-    - name: Clean cache
-      run: make clean-cache
-      shell: bash
-
-    - name: Run with preview
-      run: bundle exec make run_with_preview
-      shell: bash
-
-    - name: Normalize reports
-      run: make normalize
-      shell: bash
-
-    - name: Run summary
-      id: run-summary
-      run: bundle exec make summary
-      continue-on-error: true
-      shell: bash
-
-    - name: Check summary results
-      run: ./.github/scripts/check_summary.sh
-      shell: bash
-
-    - name: Comment on PR if necessary
-      run: ./.github/scripts/comment_on_pr.sh
-      shell: bash
-
-    - name: Upload pr-summary.csv
-      uses: actions/upload-artifact@v3
-      if: always() && steps.run-summary.outcome == 'failure'
-      with:
-        name: pr-summary
-        path: pr-summary.csv
-
-    - name: Upload baseline-unresolved.csv
-      uses: actions/upload-artifact@v3
-      if: always() && steps.run-summary.outcome == 'success'
-      with:
-        name: baseline-unresolved
-        path: baseline-unresolved.csv
-
-    - name: Fail the workflow if there are issues
-      run: exit 1
-      shell: bash
-      if: steps.run-summary.outcome == 'failure'
+# name: 'Link Checker Action'
+# description: 'Checks the integrity of links in the PR'
+# inputs:
+#   token:
+#     description: 'GitHub Token'
+#     required: true
+#   prNumber:
+#     description: 'Pull Request Number'
+#     required: true
+# outputs:
+#   pr-summary:
+#     description: 'Summary CSV for problematic links'
+#   baseline-unresolved:
+#     description: 'Baseline unresolved links CSV'
+# runs:
+#   using: 'composite'
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v3
+# 
+#     - name: Set up Ruby 3.0
+#       uses: ruby/setup-ruby@v1
+#       with:
+#         ruby-version: 3.0
+#         bundler-cache: true
+# 
+#     - name: Extract PR Number & Set Preview URL
+#       run: |
+#         echo "PREVIEW_URL=deploy-preview-${{ inputs.prNumber }}--fluxcd.netlify.app" >> $GITHUB_ENV
+#       shell: bash
+# 
+#     - name: Run main target
+#       run: bundle exec make main
+#       shell: bash
+# 
+#     - name: Clean cache
+#       run: make clean-cache
+#       shell: bash
+# 
+#     - name: Run with preview
+#       run: bundle exec make run_with_preview
+#       shell: bash
+# 
+#     - name: Normalize reports
+#       run: make normalize
+#       shell: bash
+# 
+#     - name: Run summary
+#       id: run-summary
+#       run: bundle exec make summary
+#       continue-on-error: true
+#       shell: bash
+# 
+#     - name: Check summary results
+#       run: ./.github/scripts/check_summary.sh
+#       shell: bash
+# 
+#     - name: Comment on PR if necessary
+#       run: ./.github/scripts/comment_on_pr.sh
+#       shell: bash
+# 
+#     - name: Upload pr-summary.csv
+#       uses: actions/upload-artifact@v3
+#       if: always() && steps.run-summary.outcome == 'failure'
+#       with:
+#         name: pr-summary
+#         path: pr-summary.csv
+# 
+#     - name: Upload baseline-unresolved.csv
+#       uses: actions/upload-artifact@v3
+#       if: always() && steps.run-summary.outcome == 'success'
+#       with:
+#         name: baseline-unresolved
+#         path: baseline-unresolved.csv
+# 
+#     - name: Fail the workflow if there are issues
+#       run: exit 1
+#       shell: bash
+#       if: steps.run-summary.outcome == 'failure'

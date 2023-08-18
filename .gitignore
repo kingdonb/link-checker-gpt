@@ -1,3 +1,7 @@
+/action/cache/**
+/action/links_data.json
+/action/report.csv
+/action/preview-report.csv
 cache/**
 links_data.json
 report.csv
