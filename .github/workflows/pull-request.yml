@@ -27,4 +27,5 @@ jobs:
         # prNumber: ${{ github.event.pull_request.number }} # the current PR number
         # prNumber: 1573 # We're testing against this PR until the merge is finished
         productionDomain: fluxcd.io
-        previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
+        #previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
+        previewDomain: deploy-preview-1573--fluxcd.netlify.app
