@@ -1,0 +1,28 @@
+name: 'Link Checker Action'
+description: 'Checks the integrity of links in the PR'
+inputs:
+  # TODO: make this action comment on the PR
+  # token:
+  #   description: 'GitHub Token'
+  #   required: true
+  # TODO: take a preview URL as input instead
+  prNumber:
+    description: 'Pull Request Number'
+    required: true
+  productionDomain:
+    description: 'Live production site hostname'
+    required: true
+  previewDomain:
+    description: 'Preview site deployment hostname'
+    required: true
+  githubToken:
+    description: 'The gh cli checks preview build deploy status'
+    required: true
+outputs:
+  pr-summary:
+    description: 'Summary CSV for problematic links'
+  baseline-unresolved:
+    description: 'Baseline unresolved links CSV'
+runs:
+  using: 'docker'
+  image: 'docker://ghcr.io/kingdonb/link-checker-gpt:v1-beta'
