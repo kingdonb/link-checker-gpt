@@ -33,26 +33,33 @@ class LinkAnalyzer
             full_url = fragment ? "#{base_url}##{fragment}" : base_url
 
             @logger.debug "Visiting: #{full_url}"
-            doc = link.download_and_store
+            unless link.pdf?
+              doc = link.download_and_store
 
-            # Extracting all the links from the page
-            doc.css('a').each do |link_element|
-              link_href = link_element['href']
-              # Skip links without href or with href set to '#'
-              next if link_href.nil? || link_href.strip == '#' || link_href == ""
+              # Extracting all the links from the page
+              doc.css('a').each do |link_element|
+                begin
+                  link_href = link_element['href']
+                  # Skip links without href or with href set to '#'
+                  next if link_href.nil? || link_href.strip == '#' || link_href == ""
 
-              # Splitting the base URL and fragment for proper handling
-              base_url, fragment = link_href.split('#', 2)
-              fragment = URI::Parser.new.escape(fragment) if fragment
+                  # Splitting the base URL and fragment for proper handling
+                  base_url, fragment = link_href.split('#', 2)
+                  fragment = URI::Parser.new.escape(fragment) if fragment
 
-              # Combine the base URL with the original URL and append the fragment if present
-              joined_url = URI.join(url, base_url).to_s
-              target_url = fragment ? "#{joined_url}##{fragment}" : joined_url
+                  # Combine the base URL with the original URL and append the fragment if present
+                  joined_url = URI.join(url, base_url).to_s
+                  target_url = fragment ? "#{joined_url}##{fragment}" : joined_url
 
-              link = ensure_link(links_data, source_url, target_url, link_element)
+                  link = ensure_link(links_data, source_url, target_url, link_element)
+                # rescue ArgumentError => e
+                #   PRY_MUTEX.synchronize{binding.pry}
+                  # link.response_status = "Error: #{e.message}"
+                end
+              end
             end
           rescue StandardError => e
-
+            # PRY_MUTEX.synchronize{binding.pry}
             link.response_status = "Error: #{e.message}"
             @logger.warn "Error downloading or analyzing URL #{url}: #{e.message}"
           end

@@ -11,7 +11,7 @@ require 'logger'
 
 require './lib/link_checker'
 
-# PRY_MUTEX = Thread::Mutex.new
+PRY_MUTEX = Thread::Mutex.new
 # PRY_MUTEX.synchronize{binding.pry}
 
 def parse_str_false(str)
