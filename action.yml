@@ -15,6 +15,9 @@ inputs:
   previewDomain:
     description: 'Preview site deployment hostname'
     required: true
+  githubToken:
+    description: 'The gh cli checks preview build deploy status'
+    required: true
 outputs:
   pr-summary:
     description: 'Summary CSV for problematic links'
