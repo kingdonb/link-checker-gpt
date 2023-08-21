@@ -23,9 +23,7 @@ jobs:
     - name: Check Links using Link Checker Action
       uses: ./  # say instead "uses: kingdonb/link-checker-gpt@main" or @v1
       with:
-        # token: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment
-        # prNumber: ${{ github.event.pull_request.number }} # the current PR number
-        # prNumber: 1573 # We're testing against this PR until the merge is finished
         productionDomain: fluxcd.io
-        #previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
-        previewDomain: deploy-preview-1573--fluxcd.netlify.app
+        previewDomain: deploy-preview-1573--fluxcd.netlify.app # usually: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
+        prNumber: 1573 # usually set this to: ${{ github.event.pull_request.number}}
+        githubToken: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment, check status

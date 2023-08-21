@@ -11,6 +11,13 @@ make -C /opt/link-checker clean-cache
 # export PREVIEWURL
 export PRODUCTION_URL="$INPUT_PRODUCTIONDOMAIN"
 export PREVIEW_URL="$INPUT_PREVIEWDOMAIN"
+export PR_NUMBER="$INPUT_PRNUMBER"
+
+timeout 60s bash -c 'while curl -sSL "https://${PREVIEW_URL}/sitemap.xml" |grep "Not Found - Request ID: "; do sleep 5; done'
+
+export GH_TOKEN="$INPUT_GITHUBTOKEN"
+git config --global --add safe.directory /github/workspace
+timeout 60s bash -c 'until gh pr checks ${PR_NUMBER}|grep netlify/fluxcd/deploy-preview|grep "Deploy Preview ready!"; do sleep 5; done'
 
 # Run with preview
 make -C /opt/link-checker run_with_preview

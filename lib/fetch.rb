@@ -26,7 +26,7 @@ class SitemapFetcher
 
     # Update the URLs to use the masquerade domain
     urls.map! do |url|
-      url.gsub(@domain, @masquerade_domain)
+      url.gsub("https://#{@domain}", "https://#{@masquerade_domain}")
     end
 
     raise "No URLs found in sitemap" if urls.empty?
