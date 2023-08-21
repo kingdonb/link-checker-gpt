@@ -57,6 +57,10 @@ class Link
     link
   end
 
+  def pdf?
+    @link_string.end_with?(".pdf")
+  end
+
   def download_and_store
     cache_path = CacheHelper.get_cache_path(@source_file)
     if File.exist?(cache_path)

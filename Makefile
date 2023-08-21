@@ -4,7 +4,7 @@ SED := $(shell command -v gsed 2> /dev/null || echo sed)
 all: main clean-cache preview normalize summary
 
 main:
-	bundle exec ruby ./main.rb
+	bundle exec ruby ./main.rb $(PRODUCTION_URL) $(PRODUCTION_URL)
 
 clean-cache:
 	@echo "Cleaning cache and progress data..."
