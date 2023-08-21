@@ -2,23 +2,9 @@
 
 Welcome to the Link-Checker GPT! Crafted with the assistance of ChatGPT, this link checker ensures the integrity of links in your website's content. Although primarily designed for the FluxCD website's preview environments, it's versatile enough to work with most platforms, including Netlify.
 
-## Getting Started
-
-To check the links of a preview environment on Netlify, simply run:
-
-```bash
-ruby main.rb deploy-preview-1573--fluxcd.netlify.app
-```
-
-When executed against the main `fluxcd.io` site and its preview version, the behavior should be consistent. Any discrepancies are considered bugs—either they're rectified in this tool or addressed directly in the website by modifying the links.
-
-Upon successful execution, a report detailing the link statuses is generated in `report.csv`. You can import this CSV into tools like Google Drive for further analysis and action.
-
 ## Integration as a CI Check
 
-Link-Checker GPT is ready to be integrated as a CI check within the fluxcd/website repository. When a PR check flags an error, it's an invitation to refine your links. An associated report is available as a downloadable CSV to guide the necessary corrections. Our bot might also add a comment to your PR, providing insights and recommendations to enhance the quality of your links.
-
-Certainly! Below is an example integration guide that you can include in the README for users:
+Link-Checker GPT is ready to be integrated as a CI check within the fluxcd/website repository. When a PR check flags an error, it's an invitation to refine your links. An associated report is available as a downloadable CSV to guide the necessary corrections. In the future, our bot might also add a comment to your PR, providing a gentle nag that aims to cajole us into eventually reduce the number of bad links in the repo all the way down to zero.
 
 ## Integration Guide for `fluxcd/website`
 
@@ -26,7 +12,7 @@ Integrating the Link-Checker GPT into your existing workflow is straightforward.
 
 ### Step 1: Add the Action
 
-In your `.github/workflows/` directory (create it if it doesn't exist), add a new workflow file, for instance, `link-check.yml`.
+In your `.github/workflows/` directory (create it if it doesn't exist), add a new workflow file, for instance, `link-check.yml`. You can also add this in an existing workflow.
 
 Within this file, add the following content:
 
@@ -44,16 +30,16 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Link Checker GPT
-      uses: kingdonb/link-checker-gpt@v1
+      uses: kingdonb/link-checker-gpt@v1-beta # (the v1 tag is still unreleased, we need to test)
       with:
         productionDomain: fluxcd.io
         previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
 ```
 
-WIP - **TODO**: make this work for other consumers besides fluxcd.io
+WIP - **TODO**: make this work for other consumers besides fluxcd.io - we have yet to test this on any other site. It should work anywhere that publishes a `sitemap.xml`, (which should be pretty much every important CMS including Jekyll, Hugo, Docsy, Bartholomew, ...)
 
 ### Step 2: Configuration
 
@@ -68,6 +54,26 @@ Commit the new workflow file and create a new pull request. The Link Checker GPT
 If there are any bad links in the production site, they will be captured in a baseline report for follow-up later. Those links are not counted against a PR. If there are any new bad links in the PR then the check will fail.
 
 (Create a link to an invalid anchor in your PR to test this works, then revert the change before merging it!)
+
+## How it Works
+
+Familiarize yourself with the moving parts in a local clone. This action is Dockerized, but it was not designed to run in Docker, it is a Ruby program and can run on your local workstation. Just run `bundle install` first, then type `make`!
+
+(You will run against PR#1573 but in case you want to use a different PR to check for problems, you can just edit the Makefile, or keep reading to learn how to use this as a GitHub Action.)
+
+To check the links of a preview environment on Netlify, simply run:
+
+```bash
+ruby main.rb deploy-preview-1573--fluxcd.netlify.app
+```
+
+This checks for bad links in your PR. But this is only half a check. We don't want you to get blamed for bad links that already were on the site, just because you opened a PR.
+
+So the tool needs to check `fluxcd.io` first, count up those bad links, then discount them from the PR so we can get a valid check output. This way we should guarantee that no new PR ever adds bad links to the FluxCD.io website. Any discrepancies between the reports are considered bugs—either they represent an error in this tool or they can be addressed directly in the website by modifying the links.
+
+There is a baseline report as well as a pr review report that tell what bad links are found, whether they are pre-existing on the site or created by your PR. Those pre-existing ones should be fixed eventually, as well, but they will not count against your PR.
+
+Upon successful execution one single time, a report detailing the link statuses is generated in `report.csv`. You can import this CSV into tools like Google Drive for further analysis and action. The `make summary` process takes the normalized output of the above described two checks, and it returns an error from the `check_summary.sh` script if the build should pass or fail.
 
 ## Note on UX: Report Download
 
