@@ -2,7 +2,8 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ v1-beta ]
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -31,6 +32,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/kingdonb/link-checker-gpt:v1-beta
+          tags: ghcr.io/kingdonb/link-checker-gpt:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
