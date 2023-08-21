@@ -12,7 +12,7 @@ clean-cache:
 	@rm -f links_data.json
 
 preview:
-	bundle exec ruby ./main.rb fluxcd.io deploy-preview-1573--fluxcd.netlify.app preview-report.csv false
+	bundle exec ruby ./main.rb fluxcd.io deploy-preview-1630--fluxcd.netlify.app preview-report.csv false
 
 run_with_preview: preview-report.csv
 
@@ -20,7 +20,9 @@ preview-report.csv:
 	@echo "Running with preview URL: $(PREVIEW_URL)"
 	bundle exec ruby ./main.rb $(PRODUCTION_URL) $(PREVIEW_URL) preview-report.csv false
 
-clean: clean-cache
+clean:
+	@rm -rf cache
+	@rm -f links_data.json
 	@rm -f report.csv preview-report.csv pr-summary.csv baseline-unresolved.csv
 	@echo "Clean complete!"
 
@@ -28,7 +30,7 @@ normalize: report.csv preview-report.csv
 	@# Normalize the main report.csv
 	@$(SED) -i '1d' report.csv
 	@PRODUCTION_DOMAIN=$(shell if [ -z "$(PRODUCTION_URL)" ]; then echo "fluxcd.io"; else echo "$(PRODUCTION_URL)"; fi) ;\
-		PREVIEW_DOMAIN=$(shell if [ -z "$(PREVIEW_URL)" ]; then echo "deploy-preview-1573--fluxcd.netlify.app"; else echo "$(PREVIEW_URL)"; fi) ;\
+		PREVIEW_DOMAIN=$(shell if [ -z "$(PREVIEW_URL)" ]; then echo "deploy-preview-1630--fluxcd.netlify.app"; else echo "$(PREVIEW_URL)"; fi) ;\
 		$(SED) -i "s/https:\/\/$$PRODUCTION_DOMAIN/https:\/\/$$PREVIEW_DOMAIN/1" report.csv ;\
 		$(SED) -i "s/https:\/\/$$PRODUCTION_DOMAIN/https:\/\/$$PREVIEW_DOMAIN/1" report.csv
 	@sort -o report.csv report.csv
