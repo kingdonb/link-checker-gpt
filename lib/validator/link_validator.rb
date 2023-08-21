@@ -26,7 +26,7 @@ class LinkValidator
 
   def adjust_links_target(domain, masquerade_domain)
     @links_data.each do |link|
-      link.target.gsub!(domain, masquerade_domain) if link.type != 'remote'
+      link.target.gsub!("https://#{domain}", "https://#{masquerade_domain}") if link.type != 'remote'
     end
   end
 
