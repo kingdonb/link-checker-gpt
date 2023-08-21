@@ -39,7 +39,7 @@ class LinkAnalyzer
             doc.css('a').each do |link_element|
               link_href = link_element['href']
               # Skip links without href or with href set to '#'
-              next if link_href.nil? || link_href.strip == '#'
+              next if link_href.nil? || link_href.strip == '#' || link_href == ""
 
               # Splitting the base URL and fragment for proper handling
               base_url, fragment = link_href.split('#', 2)
