@@ -1,10 +1,10 @@
 FROM ruby:3.0
 
 # Install the gh cli (TODO: make the action comment on the PR)
-# RUN apt-get update && apt-get install -y software-properties-common && \
-#     apt-add-repository https://cli.github.com/packages && \
-#     apt-get update && \
-#     apt-get install -y gh
+RUN apt-get update && apt-get install -y software-properties-common && \
+    apt-add-repository https://cli.github.com/packages && \
+    apt-get update && \
+    apt-get install -y gh
 
 # Do not: Set the working directory in the container
 # per https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions#workdir

@@ -37,6 +37,7 @@ jobs:
       with:
         productionDomain: fluxcd.io
         previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
+        prNumber: ${{ github.event.pull_request.number }}
 ```
 
 WIP - **TODO**: make this work for other consumers besides fluxcd.io - we have yet to test this on any other site. It should work anywhere that publishes a `sitemap.xml`, (which should be pretty much every important CMS including Jekyll, Hugo, Docsy, Bartholomew, ...)
