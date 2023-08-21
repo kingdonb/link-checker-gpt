@@ -20,7 +20,9 @@ preview-report.csv:
 	@echo "Running with preview URL: $(PREVIEW_URL)"
 	bundle exec ruby ./main.rb $(PRODUCTION_URL) $(PREVIEW_URL) preview-report.csv false
 
-clean: clean-cache
+clean:
+	@rm -rf cache
+	@rm -f links_data.json
 	@rm -f report.csv preview-report.csv pr-summary.csv baseline-unresolved.csv
 	@echo "Clean complete!"
 
