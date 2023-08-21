@@ -1,14 +1,20 @@
 # Link-Checker GPT
 
-Welcome to the Link-Checker GPT! Crafted with the assistance of ChatGPT, this link checker ensures the integrity of links in your website's content. Although primarily designed for the FluxCD website's preview environments, it's versatile enough to work with most platforms, including Netlify.
+Welcome to the Link-Checker GPT! Crafted with the assistance of ChatGPT, this link checker ensures the integrity of links in your website's content.
+
+Although primarily designed for use with the FluxCD website's preview environments, it's versatile enough to work with most platforms, including at least Netlify which currently hosts Flux's own website and preview builds.
 
 ## Integration as a CI Check
 
-Link-Checker GPT is ready to be integrated as a CI check within the fluxcd/website repository. When a PR check flags an error, it's an invitation to refine your links. An associated report is available as a downloadable CSV to guide the necessary corrections. In the future, our bot might also add a comment to your PR, providing a gentle nag that aims to cajole us into eventually reduce the number of bad links in the repo all the way down to zero.
+Link-Checker GPT is ready to be integrated as a CI check within the fluxcd/website repository. When a PR check flags an error, it's an invitation to refine your links. You need not make this check required, but it is hoped that this workflow is robust enough you will feel comfortable doing just that.
+
+An associated report is available as a downloadable CSV to guide the necessary corrections. In the future, our check might add a comment to the PR, providing a gentle nag that aims to cajole us into eventually reduce the number of bad links in the repo all the way down to zero. It is best to start with no bad links, but that is definitely not a prerequisite. We will mainly need to focus on the bad links created by each new PR first.
+
+Link-Checker GPT works best when it's integrated directly with your website's CI, since then nobody has to run it manually.
 
 ## Integration Guide for `fluxcd/website`
 
-Integrating the Link-Checker GPT into your existing workflow is straightforward. Here's how you can integrate it into the `fluxcd/website` repository:
+Integrating the Link-Checker GPT into your existing workflow is straightforward. Here's how you can integrate it into the `fluxcd/website` repository as an example:
 
 ### Step 1: Add the Action
 
@@ -41,7 +47,9 @@ jobs:
         githubToken: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-WIP - **TODO**: make this work for other consumers besides fluxcd.io - we have yet to test this on any other site. It should work anywhere that publishes a `sitemap.xml`, (which should be pretty much every important CMS including Jekyll, Hugo, Docsy, Bartholomew, ...)
+The check is smart enough to wait for the `previewDomain` to come online, and it is also smart enough to wait for the Netlify Deploy preview build to finish before moving onto that part of the check.
+
+In the future this will work for other consumers besides fluxcd.io - we have yet to test this on any other site. It should work anywhere that publishes a `sitemap.xml`, (which should be pretty much every important CMS including Jekyll, Hugo, Docsy, Bartholomew, ...) Q: how to generalize a PR check?
 
 ### Step 2: Configuration
 
