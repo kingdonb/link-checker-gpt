@@ -38,52 +38,78 @@ jobs:
         productionDomain: fluxcd.io
         previewDomain: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
         prNumber: ${{ github.event.pull_request.number }}
-        githubToken: ${{ github.token }}
+        githubToken: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 WIP - **TODO**: make this work for other consumers besides fluxcd.io - we have yet to test this on any other site. It should work anywhere that publishes a `sitemap.xml`, (which should be pretty much every important CMS including Jekyll, Hugo, Docsy, Bartholomew, ...)
 
 ### Step 2: Configuration
 
-The required parameters are `productionDomain`, the target domain for production (to create a baseline report) and `previewDomain` the target domain for the PR's preview environment, by the convention this can usually be inferred from the PR number. This is the preview URL for the link checker.
+The required parameters are `productionDomain`, the target domain for production (to create a baseline report) and `previewDomain` the target domain for the PR's preview environment; by the convention shown above this can usually be inferred from the PR number. This is the preview URL for the link checker. You are expected to provide both the `prNumber` and `githubToken` for checking that the deploy preview is ready before we proceed.
 
-Both domains must create a sitemap.xml and populate it.
+Both domains (the preview and the production site) must create a sitemap.xml and fully populate it.
 
 ### Step 3: Commit and Test
 
 Commit the new workflow file and create a new pull request. The Link Checker GPT action should automatically run and validate the links within the website content associated with the PR.
 
-If there are any bad links in the production site, they will be captured in a baseline report for follow-up later. Those links are not counted against a PR. If there are any new bad links in the PR then the check will fail.
+If there are any bad links in the production site, they will be captured in a baseline report for follow-up later. Those links are generally not counted against a PR unless you moved something on the same page ([#20][]). Then you should probably go ahead and fix it, since you're already updating something in that file. The goal is to fix all links. If there are any freshly minted bad links then the check will fail.
 
-(Create a link to an invalid anchor in your PR to test this works, then revert the change before merging it!)
+(Create a link to an invalid anchor in your PR to test this works, then revert the change before merging it! - we [tested this here](https://github.com/fluxcd/website/pull/1630#issuecomment-1686851800))
+
+
+## How Cool!
+
+It performs as advertised! I swear ChatGPT wrote most of this code. I'm not even sure if it's entitled to copyright protection. I asked what license ChatGPT wanted and he said MIT, so that's what we got. I wrote extensive prompts, tested for a long time, and I definitely wrote at least the Makefile without any help. Anyway, it does the job and I hope we can use it.
 
 ## How it Works
 
-Familiarize yourself with the moving parts in a local clone. This action is Dockerized, but it was not designed to run in Docker, it is a Ruby program and can run on your local workstation. Just run `bundle install` first, then type `make`!
+Familiarize yourself with the moving parts in a local clone. This action is Dockerized, but it was not designed to run only in Docker, it is a Ruby program and can run on your local workstation.
 
-(You will run against PR#1573 but in case you want to use a different PR to check for problems, you can just edit the Makefile, or keep reading to learn how to use this as a GitHub Action.)
+Just run `bundle install` first, then type `make`!
+
+(You will run against PR#1630 but in case you want to use a different PR to check for problems, you can just edit the Makefile, or keep reading to learn how to use this more generally, or as a GitHub Action workflow.)
 
 To check the links of a preview environment on Netlify, simply run:
 
 ```bash
-ruby main.rb deploy-preview-1573--fluxcd.netlify.app
+ruby main.rb deploy-preview-1630--fluxcd.netlify.app
 ```
 
-This checks for bad links in your PR. But this is only half a check. We don't want you to get blamed for bad links that already were on the site, just because you opened a PR.
+This checks for bad links in your PR. But this is only half a check. We don't want you to get blamed for bad links that already were on the site, just because you opened a PR. So `link-checker-gpt` is designed to be a bit smarter.
 
-So the tool needs to check `fluxcd.io` first, count up those bad links, then discount them from the PR so we can get a valid check output. This way we should guarantee that no new PR ever adds bad links to the FluxCD.io website. Any discrepancies between the reports are considered bugs—either they represent an error in this tool or they can be addressed directly in the website by modifying the links.
+The tool needs to check `fluxcd.io` first, count up those pre-existing bad links, then discount them from the PR so we can get a valid check output. This way we should guarantee that no new PR ever adds bad links to the FluxCD.io website. Any discrepancies between the reports are considered bugs—either they represent an error in this tool or they can be addressed directly in the website by modifying the links.
 
 There is a baseline report as well as a pr review report that tell what bad links are found, whether they are pre-existing on the site or created by your PR. Those pre-existing ones should be fixed eventually, as well, but they will not count against your PR.
 
-Upon successful execution one single time, a report detailing the link statuses is generated in `report.csv`. You can import this CSV into tools like Google Drive for further analysis and action. The `make summary` process takes the normalized output of the above described two checks, and it returns an error from the `check_summary.sh` script if the build should pass or fail.
+Both reports are workflow outputs and you can theoretically use another action to consume them. I used `upload-artifact` to do that in earlier versions, but it is ugly and we didn't want to use a composite action. (I put this old version in the `attic/` for posterity.)
+
+Upon successful execution of the main ruby program one single time, a report detailing the link statuses is generated in `report.csv`. You can import this CSV into tools like Google Drive for further analysis and action if this report is longer than a few links.
+
+The `make summary` process takes the normalized output of the above described two checks, and it returns an error from the `check_summary.sh` script if the build should pass or fail.
+
+### Testing Locally
+
+You can run it all in a local clone of the repository, like this:
+
+```bash
+PRODUCTION_URL=fluxcd.io \
+PREVIEW_URL=deploy-preview-1630--fluxcd.netlify.app \
+PR_NUMBER=1630 \
+make clean \
+  main clean-cache \
+  run_with_preview \
+  normalize \
+summary
+```
 
 ## Note on UX: Report Download
 
-In the event of a PR check failure, you can read the report in the failed job output. Initially this workflow was designed to enable the user to access a detailed report in the form of a zipped CSV. This was originally built as a composite workflow, you can still find remnants of this in the commented section of `action.yml`.
+In the event of a PR check failure, you can read the report in the failed job output. Initially this workflow was designed to enable the user to access a detailed report in the form of a zipped CSV. This was originally built as a composite workflow, you can still find remnants of this in the attic, the `action.yml` has been renamed as `unused-composite.yml`. It's much easier to just run the report locally if you need a copy for yourself.
 
-Instead, the report now goes out to the workflow/action job log. You can read all the bad links created by your PR there. Any links from the baseline site will not be included in the report unless your PR is spotless. A later version might emit the baseline report when there is no issue created by the PR, to encourage tidying. Then the report will show the baseline issues, but since it was not caused by your PR they will not fail the report.
+The `pr-summary.csv` report goes out to the workflow/action job log. You can read all the bad links created by your PR there. Any links from the baseline site will not be included in the report unless your PR is spotless. A later version might emit the baseline report when there is no issue created by the PR, to encourage tidying. Then the report will show the baseline issues, but since it was not caused by your PR they will not fail the report.
 
-The primary goal is to maximize the signal to noise ratio and prevent the users from desiring to uninstall this workflow. It should be easy to adopt, and it should never fail the workflow to nag the contributor about issues that their PR didn't create.
+The primary goal is to maximize the signal to noise ratio and prevent the users from desiring to uninstall this workflow. It should be easy to adopt, and it should never fail the workflow to nag the contributor about issues that their PR didn't create. (Well, maybe once in a while. [#20][])
 
 **TODO**: We will still figure out a way to expose those baseline errors yet.
 
@@ -98,3 +124,5 @@ However, there's a known issue: the cache isn't always reliable. To ensure accur
 The primary issue to grapple now is that we can wait for the preview environment's deploy to become ready once, but cannot guarantee that subsequent runs of the checker are always looking at the latest version. There is no synchronization or coordination between independent jobs, and there is no job configuration for the Netlify preview build (not even sure how this works - it is an externally provided action.)
 
 Perhaps we can read the check statuses and wait to proceed with the scan of the preview domain until the Netlify deploy check shows itself as ready.
+
+[#20]: https://github.com/kingdonb/link-checker-gpt/issues/20
