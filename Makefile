@@ -28,7 +28,7 @@ normalize: report.csv preview-report.csv
 	@# Normalize the main report.csv
 	@$(SED) -i '1d' report.csv
 	@PRODUCTION_DOMAIN=$(shell if [ -z "$(PRODUCTION_URL)" ]; then echo "fluxcd.io"; else echo "$(PREVIEW_URL)"; fi) ;\
-		@PREVIEW_DOMAIN=$(shell if [ -z "$(PREVIEW_URL)" ]; then echo "deploy-preview-1573--fluxcd.netlify.app"; else echo "$(PREVIEW_URL)"; fi) ;\
+		PREVIEW_DOMAIN=$(shell if [ -z "$(PREVIEW_URL)" ]; then echo "deploy-preview-1573--fluxcd.netlify.app"; else echo "$(PREVIEW_URL)"; fi) ;\
 		$(SED) -i "s/$$PRODUCTION_DOMAIN/$$PREVIEW_DOMAIN/1; s/$$PRODUCTION_DOMAIN/$$PREVIEW_DOMAIN/1" report.csv
 	@sort -o report.csv report.csv
 	
