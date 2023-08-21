@@ -23,4 +23,4 @@ outputs:
     description: 'Baseline unresolved links CSV'
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://ghcr.io/kingdonb/link-checker-gpt:v1-beta'
