@@ -24,6 +24,6 @@ jobs:
       uses: ./  # say instead "uses: kingdonb/link-checker-gpt@main" or @v1
       with:
         productionDomain: fluxcd.io
-        previewDomain: deploy-preview-1573--fluxcd.netlify.app # usually: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
-        prNumber: 1573 # usually set this to: ${{ github.event.pull_request.number}}
+        previewDomain: deploy-preview-1630--fluxcd.netlify.app # usually: deploy-preview-${{ github.event.pull_request.number }}--fluxcd.netlify.app
+        prNumber: 1630 # usually set this to: ${{ github.event.pull_request.number}}
         githubToken: ${{ secrets.GITHUB_TOKEN }} # pass a github token so we can comment, check status
