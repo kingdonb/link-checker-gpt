@@ -1,9 +1,13 @@
 require './lib/cache_helper'
 require './lib/url_helper'
+require './lib/constants'
+require './lib/link/link_downloader'
 
 class Link
   attr_accessor :source_file, :target, :type, :anchor,
                 :response_status, :link_string, :link_text, :line_no, :reference_intact
+
+  include Constants
 
   def initialize(source_url, link_element, domain)
     @source_file = source_url
@@ -11,6 +15,7 @@ class Link
 
     if link_element
       @link_string = link_element['href']
+      self.target = @link_string
       link_text = link_element.text
       @line_no = link_element.line
       determine_type
@@ -18,10 +23,13 @@ class Link
     else
       # If no link_element is provided, assume the source is the target and type is local.
       @link_string = source_url
-      @target = source_url
+      self.target = source_url
       @type = 'local'
     end
+  end
 
+  def target=(value)
+    @target = value
     make_absolute
   end
 
@@ -58,21 +66,26 @@ class Link
   end
 
   def download_and_store
-    cache_path = CacheHelper.get_cache_path(@source_file)
-    if File.exist?(cache_path)
-      html_content, status = CacheHelper.read_from_cache(@source_file)
-      @response_status = status if status && status.to_i >= 400
-    else
-      response = Net::HTTP.get_response(URI(@source_file))
-      html_content = response.body
-      html_content.force_encoding('UTF-8')
-      # Ensure the directory exists before writing the cache
-      FileUtils.mkdir_p(File.dirname(cache_path))
-      CacheHelper.write_to_cache(@source_file, html_content, response.code)
-      @response_status = response.code if response.code.to_i >= 400
+    retries = 0
+
+    target = loop do
+      target = LINKS_MUTEX.synchronize do
+        @target
+      end
+      if URI.parse(target).host
+        target
+      else
+        raise StandardError, "waiting for link to become absolute but it never did" if retries >= MAX_RETRIES
+
+        sleep(SLEEP_DURATION)
+        retries += 1
+      end
     end
 
-    Nokogiri::HTML(html_content)
+    LinkDownloader.new(target)
+    downloader.fetch_content
+  rescue Errno::ECONNREFUSED => e
+    PRY_MUTEX.synchronize{binding.pry}
   end
 
   def check_reference_intact!(escaped, doc)

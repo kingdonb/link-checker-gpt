@@ -33,11 +33,18 @@ class LinkAnalyzer
             full_url = fragment ? "#{base_url}##{fragment}" : base_url
 
             @logger.debug "Visiting: #{full_url}"
-            doc = link.download_and_store
+            doc, _ = link.download_and_store
 
             # Extracting all the links from the page
             doc.css('a').each do |link_element|
               link_href = link_element['href']
+
+              # Skip the link to the blog RSS feed
+              next if link_href && link_href.include?('blog/index.xml')
+
+              # Skip the link back to root on every page
+              next if link_href && link_href == '/'
+
               # Skip links without href or with href set to '#'
               next if link_href.nil? || link_href.strip == '#'
 

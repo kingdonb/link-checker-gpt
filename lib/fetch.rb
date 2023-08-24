@@ -1,10 +1,11 @@
 require './lib/fetch/http_client'
+require './lib/constants'
 
 class SitemapFetcher
   class RedirectionError < StandardError; end
   class HTTPError < StandardError; end
 
-  MAX_REDIRECTS = 5
+  include Constants
 
   def initialize(domain, masquerade_domain, logger)
     @domain = domain
