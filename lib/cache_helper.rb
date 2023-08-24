@@ -11,6 +11,8 @@ module CacheHelper
 
   def self.write_to_cache(url, content, status)
     cache_path = get_cache_path(url)
+    # Ensure the directory exists before writing to the cache
+    FileUtils.mkdir_p(File.dirname(cache_path))
     data = { content: content, status: status }
     File.write(cache_path, JSON.dump(data))
   end
